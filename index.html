@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Sultan Sports Kadapa · Walk-In 3D Sports Showroom</title>
+    <link rel="icon" type="image/png" href="/brand/sultan_emblem.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="/src/modules/story-ui/styles.css" />
+  </head>
+  <body>
+    <div id="loader" class="loader" role="status" aria-live="polite">
+      <div class="loader-emblem">
+        <img src="/brand/sultan_emblem.png" alt="Sultan Sports Emblem" class="loader-emblem-img" />
+      </div>
+      <div class="loader-title">Opening Sultan Sports Kadapa…</div>
+      <div class="loader-track">
+        <div id="loader-bar" class="loader-bar"></div>
+      </div>
+      <div id="loader-pct" class="loader-pct">0%</div>
+    </div>
+
+    <header class="topbar">
+      <div class="brand-lockup">
+        <div class="brand-seal">
+          <img src="/brand/sultan_emblem.png" alt="Sultan Sports Logo" class="brand-seal-img" />
+        </div>
+        <div>
+          <div class="brand-name">SULTAN SPORTS KADAPA</div>
+          <div class="brand-sub">Retail &amp; Wholesale · Apsara Circle</div>
+        </div>
+      </div>
+      <div class="topbar-right">
+        <span class="rating-pill">4.9 ★ · 118 Reviews</span>
+        <span id="scroll-pct" class="pct-pill">0%</span>
+      </div>
+    </header>
+
+    <canvas id="webgl-stage" class="webgl-stage" aria-label="Sultan Sports 3D Showroom"></canvas>
+
+    <aside id="story-card" class="story-card" aria-live="polite">
+      <div id="card-num" class="card-num">01 · APSARA CIRCLE, KADAPA</div>
+      <h1 id="card-title" class="card-title">Walk into Sultan Sports Kadapa.</h1>
+      <p id="card-body" class="card-body"></p>
+      <div id="card-extra"></div>
+      <div id="card-cta" class="card-cta"></div>
+    </aside>
+
+    <nav class="timeline-dock" aria-label="Showroom Chapters">
+      <div class="progress-rail">
+        <div id="scroll-progress-bar" class="progress-fill"></div>
+      </div>
+      <div id="chapter-nav" class="chapter-nav"></div>
+    </nav>
+
+    <main id="scroll-track" class="scroll-track" aria-hidden="true"></main>
+
+    <script type="module" src="/src/main.js"></script>
+  </body>
+</html>
