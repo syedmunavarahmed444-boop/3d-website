@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { CHAPTERS } from '../brand/storeData.js';
 
 function lerpAngle(current, target, t) {
@@ -10,10 +11,10 @@ function lerpAngle(current, target, t) {
 }
 
 /**
- * Fixed 3D WebGL stage for Phase 1:
- * - Spatial blockout of Sultan Sports Kadapa (street, shutter, green turf, racks, counter)
- * - Rigged mascot.glb with smooth walk-to-target locomotion (never teleports)
- * - Camera + shutter driven by ScrollStoryEngine
+ * Full 3D WebGL Showroom Stage:
+ * - Distortion-free natural human-eye camera + gentle pointer parallax
+ * - Real RoomEnvironment HDRI reflections so brass/gold trophies, glass counter & willow bats gleam
+ * - Animated ceiling fan, rolling entrance shutter, and walk-to-target mascot locomotion
  */
 export class Phase1Stage {
   constructor(canvas, { onProgress, onReady, onError } = {}) {
@@ -25,6 +26,7 @@ export class Phase1Stage {
     this.clock = new THREE.Clock();
     this.mascot = null;
     this.morphMesh = null;
+    this.ceilingFan = null;
     this.elapsed = 0;
     this.mixer = null;
     this.actions = new Map();
@@ -33,6 +35,8 @@ export class Phase1Stage {
     this.desiredCamPos = new THREE.Vector3(...CHAPTERS[0].camera.pos);
     this.desiredCamTarget = new THREE.Vector3(...CHAPTERS[0].camera.target);
     this.currentCamTarget = new THREE.Vector3(...CHAPTERS[0].camera.target);
+    this.pointerOffset = new THREE.Vector2(0, 0);
+    this.smoothPointer = new THREE.Vector2(0, 0);
 
     this.mascotTargetPos = new THREE.Vector3(...CHAPTERS[0].mascot.pos);
     this.mascotTargetRotY = CHAPTERS[0].mascot.rotY;
@@ -41,9 +45,10 @@ export class Phase1Stage {
 
     this._rafId = null;
     this._initScene();
-    this._buildPhase1Blockout();
+    this._buildShutter();
     this._loadExterior();
-    this._bindResize();
+    this._loadInterior();
+    this._bindEvents();
     this._loadShopEmblem();
     this._loadMascot();
     this._animate();
@@ -55,10 +60,10 @@ export class Phase1Stage {
 
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x8fbbe0);
-    this.scene.fog = new THREE.Fog(0x9ac3e3, 18, 42);
+    this.scene.fog = new THREE.Fog(0x9ac3e3, 18, 44);
 
-    this.camera = new THREE.PerspectiveCamera(42, w / h, 0.1, 60);
-    this._applyFramingOffset(w, h);
+    // Distortion-free centered human-eye lens (no frustum shear!)
+    this.camera = new THREE.PerspectiveCamera(w > 900 ? 48 : 58, w / h, 0.1, 60);
     this.camera.position.copy(this.desiredCamPos);
     this.camera.lookAt(this.currentCamTarget);
 
@@ -71,15 +76,21 @@ export class Phase1Stage {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.15;
+    this.renderer.toneMappingExposure = 1.08;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // Warm Kadapa morning daylight + crisp interior showroom lighting
-    const hemi = new THREE.HemisphereLight(0xfff7e8, 0x3b4942, 1.35);
+    // Baked PBR showroom environment reflections (makes metallic gold trophies & glossy bats gleam)
+    const pmrem = new THREE.PMREMGenerator(this.renderer);
+    this.envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
+    this.scene.environment = this.envRT.texture;
+    this.scene.environmentIntensity = 0.62;
+    pmrem.dispose();
+
+    const hemi = new THREE.HemisphereLight(0xfff9ee, 0x3b4d40, 1.25);
     this.scene.add(hemi);
 
-    const sun = new THREE.DirectionalLight(0xffe7bd, 2.55);
+    const sun = new THREE.DirectionalLight(0xffe7bd, 2.35);
     sun.position.set(5.5, 8.5, 7.5);
     sun.castShadow = true;
     sun.shadow.bias = -0.0004;
@@ -93,62 +104,32 @@ export class Phase1Stage {
     sun.shadow.camera.bottom = -6;
     this.scene.add(sun);
 
-    const shopFill = new THREE.PointLight(0xfff4de, 4.2, 14, 1.2);
-    shopFill.position.set(0.6, 3.0, -3.2);
-    this.scene.add(shopFill);
+    const shopFrontLED = new THREE.PointLight(0xfffaf0, 3.4, 9.5, 1.2);
+    shopFrontLED.position.set(0.05, 2.92, -0.45);
+    this.scene.add(shopFrontLED);
 
-    // Soft interior front-fill so mascot face & black/gold jersey read crisply inside the shop
-    const interiorFrontFill = new THREE.DirectionalLight(0xfff7eb, 1.15);
-    interiorFrontFill.position.set(-1.5, 2.2, 3.5);
+    const shopBackLED = new THREE.PointLight(0xfff6e5, 4.0, 10.5, 1.2);
+    shopBackLED.position.set(0.1, 2.92, -3.25);
+    this.scene.add(shopBackLED);
+
+    const interiorFrontFill = new THREE.DirectionalLight(0xfff7eb, 0.95);
+    interiorFrontFill.position.set(0.8, 2.1, 4.0);
     this.scene.add(interiorFrontFill);
   }
 
-  _buildPhase1Blockout() {
-    // Showroom green artificial turf floor strictly inside the shop (z: 1.10 down to -7.6)
-    const turf = new THREE.Mesh(
-      new THREE.PlaneGeometry(5.6, 8.75),
-      new THREE.MeshStandardMaterial({ color: 0x165c36, roughness: 0.95 })
-    );
-    turf.rotation.x = -Math.PI / 2;
-    turf.position.set(0.9, 0, -3.22);
-    turf.receiveShadow = true;
-    this.scene.add(turf);
-
-    // Storefront interior enclosure walls + back wall (flush behind exterior facade at z = 1.12)
-    const wallMat = new THREE.MeshStandardMaterial({ color: 0xe6e1d5, roughness: 0.85 });
-    const trimMat = new THREE.MeshStandardMaterial({ color: 0x0b2c22, roughness: 0.55 });
+  _buildShutter() {
     const goldMat = new THREE.MeshStandardMaterial({
       color: 0xe8b448,
-      roughness: 0.35,
-      metalness: 0.55,
+      roughness: 0.32,
+      metalness: 0.65,
     });
 
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.4, 8.7), wallMat);
-    leftWall.position.set(-1.86, 1.7, -3.22);
-    leftWall.receiveShadow = true;
-    this.scene.add(leftWall);
-
-    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.4, 8.7), wallMat);
-    rightWall.position.set(3.55, 1.7, -3.22);
-    rightWall.receiveShadow = true;
-    this.scene.add(rightWall);
-
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(5.65, 3.4, 0.25), wallMat);
-    backWall.position.set(0.85, 1.7, -7.5);
-    backWall.receiveShadow = true;
-    this.scene.add(backWall);
-
-    const ceiling = new THREE.Mesh(new THREE.BoxGeometry(5.65, 0.2, 8.7), trimMat);
-    ceiling.position.set(0.85, 3.45, -3.22);
-    this.scene.add(ceiling);
-
-    // Rolling Shutter sized to fit exterior doorway (x: -1.65..+1.65, y: 0..2.70, z: 1.22)
     this.shutterGroup = new THREE.Group();
     this.shutterGroup.position.set(0, 2.7, 1.22);
     const shutterMat = new THREE.MeshStandardMaterial({
       color: 0x164a3a,
-      roughness: 0.42,
-      metalness: 0.48,
+      roughness: 0.4,
+      metalness: 0.52,
     });
     const shutterSheet = new THREE.Mesh(new THREE.BoxGeometry(3.32, 2.68, 0.06), shutterMat);
     shutterSheet.position.set(0, -1.34, 0);
@@ -156,9 +137,9 @@ export class Phase1Stage {
     shutterSheet.receiveShadow = true;
     this.shutterGroup.add(shutterSheet);
 
-    const ribMat = new THREE.MeshStandardMaterial({ color: 0x0d2f25, roughness: 0.5, metalness: 0.55 });
+    const ribMat = new THREE.MeshStandardMaterial({ color: 0x0d2f25, roughness: 0.48, metalness: 0.58 });
     for (let r = 0; r < 12; r++) {
-      const rib = new THREE.Mesh(new THREE.BoxGeometry(3.30, 0.035, 0.08), ribMat);
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(3.3, 0.035, 0.08), ribMat);
       rib.position.set(0, -0.18 - r * 0.21, 0);
       this.shutterGroup.add(rib);
     }
@@ -167,47 +148,6 @@ export class Phase1Stage {
     shutterBottomBar.position.set(0, -2.66, 0);
     this.shutterGroup.add(shutterBottomBar);
     this.scene.add(this.shutterGroup);
-
-    // White vertical bat rack placeholders on the right wall (7 stops for Phase 1 camera test)
-    const rackMat = new THREE.MeshStandardMaterial({ color: 0xf4f4f0, roughness: 0.5 });
-    const batWoodMat = new THREE.MeshStandardMaterial({ color: 0xd4a977, roughness: 0.65 });
-    const gripGreenMat = new THREE.MeshStandardMaterial({ color: 0x38d964, roughness: 0.7 });
-
-    for (let i = 0; i < 7; i++) {
-      const z = -1.2 - i * 0.55;
-      const shelf = new THREE.Mesh(new THREE.BoxGeometry(0.45, 2.1, 0.48), rackMat);
-      shelf.position.set(3.0, 1.05, z);
-      shelf.castShadow = true;
-      shelf.receiveShadow = true;
-      this.scene.add(shelf);
-
-      // Stand-in cricket bat silhouette in each rack
-      const blade = new THREE.Mesh(new THREE.BoxGeometry(0.11, 0.62, 0.045), batWoodMat);
-      blade.position.set(2.86, 0.95, z);
-      blade.rotation.z = 0.14;
-      this.scene.add(blade);
-
-      const grip = new THREE.Mesh(new THREE.CylinderGeometry(0.022, 0.022, 0.28, 10), gripGreenMat);
-      grip.position.set(2.81, 1.38, z);
-      grip.rotation.z = 0.14;
-      this.scene.add(grip);
-
-      // Golden trophy placeholder on top shelf
-      const cup = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.04, 0.24, 14), goldMat);
-      cup.position.set(2.96, 2.24, z);
-      this.scene.add(cup);
-    }
-
-    // Wholesale / Dispatch Counter near the back
-    const counter = new THREE.Mesh(new THREE.BoxGeometry(2.6, 0.95, 0.75), trimMat);
-    counter.position.set(0.55, 0.475, -5.8);
-    counter.castShadow = true;
-    counter.receiveShadow = true;
-    this.scene.add(counter);
-
-    const counterTop = new THREE.Mesh(new THREE.BoxGeometry(2.66, 0.06, 0.8), goldMat);
-    counterTop.position.set(0.55, 0.97, -5.8);
-    this.scene.add(counterTop);
   }
 
   _loadExterior() {
@@ -236,6 +176,35 @@ export class Phase1Stage {
     );
   }
 
+  _loadInterior() {
+    const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);
+
+    loader.load(
+      '/models/interior.glb',
+      (gltf) => {
+        const interior = gltf.scene;
+        interior.traverse((child) => {
+          if (child.name && child.name.includes('ShowroomCeilingFan')) {
+            this.ceilingFan = child;
+          }
+          if (child.isMesh) {
+            const matName = child.material?.name || '';
+            const isLED = matName.includes('CeilingLED');
+            const isGlass = matName.includes('CounterGlass') || matName.includes('RacketStrings');
+            child.castShadow = !isLED && !isGlass;
+            child.receiveShadow = !isLED;
+          }
+        });
+        this.scene.add(interior);
+      },
+      undefined,
+      (err) => {
+        console.warn('Could not load interior.glb:', err);
+      }
+    );
+  }
+
   _loadShopEmblem() {
     const loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);
@@ -251,13 +220,12 @@ export class Phase1Stage {
           }
         });
 
-        // Front face is +X in raw GLB -> rotate -PI/2 around Y to face +Z (street)
-        // Mounted prominently on the back legacy wall inside the shop
-        const wallEmblem = frontEmblem;
-        wallEmblem.rotation.y = -Math.PI / 2;
-        wallEmblem.scale.setScalar(1.1);
-        wallEmblem.position.set(0.45, 2.05, -7.28);
-        this.scene.add(wallEmblem);
+        // Mounted flush on the 36°-angled Front-Left Corner Showcase Counter facing the entrance
+        const counterEmblem = frontEmblem;
+        counterEmblem.rotation.y = (-36 * Math.PI) / 180;
+        counterEmblem.scale.setScalar(0.5);
+        counterEmblem.position.set(-0.922, 0.41, 0.138);
+        this.scene.add(counterEmblem);
       },
       undefined,
       (err) => {
@@ -283,11 +251,11 @@ export class Phase1Stage {
         model.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
-            // Avoid self-shadow acne speckles on skinned character mesh
             child.receiveShadow = false;
             if (child.material) {
               child.material.roughness = Math.max(child.material.roughness ?? 0.75, 0.78);
               child.material.metalness = Math.min(child.material.metalness ?? 0, 0.05);
+              child.material.envMapIntensity = 0.35;
             }
             if (child.morphTargetDictionary && child.morphTargetInfluences) {
               this.morphMesh = child;
@@ -309,7 +277,6 @@ export class Phase1Stage {
         this.mixer.update(0);
         this.mascot.updateMatrixWorld(true);
 
-        // Ground animated shoes accurately on y = 0
         let minBoneY = Infinity;
         this.mascot.traverse((obj) => {
           if (obj.isBone && /Foot|Toe/i.test(obj.name)) {
@@ -358,28 +325,22 @@ export class Phase1Stage {
     this.mascotDesiredAnim = ch.mascot.anim;
   }
 
-  _applyFramingOffset(w, h) {
-    if (w > 820) {
-      // Shift 3D center ~17% right so it never overlaps the left story card
-      this.camera.fov = 42;
-      this.camera.setViewOffset(w, h, -w * 0.17, 0, w, h);
-    } else {
-      // On mobile/portrait, widen FOV slightly and lift 3D center above bottom card
-      this.camera.fov = 52;
-      this.camera.setViewOffset(w, h, 0, h * 0.21, w, h);
-    }
-    this.camera.aspect = w / h;
-    this.camera.updateProjectionMatrix();
-  }
-
-  _bindResize() {
+  _bindEvents() {
     this._onResize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      this._applyFramingOffset(w, h);
+      this.camera.fov = w > 900 ? 48 : 58;
+      this.camera.aspect = w / h;
+      this.camera.updateProjectionMatrix();
       this.renderer.setSize(w, h);
     };
+    this._onPointerMove = (e) => {
+      const nx = (e.clientX / Math.max(1, window.innerWidth)) * 2 - 1;
+      const ny = (e.clientY / Math.max(1, window.innerHeight)) * 2 - 1;
+      this.pointerOffset.set(nx * 0.14, -ny * 0.07);
+    };
     window.addEventListener('resize', this._onResize);
+    window.addEventListener('pointermove', this._onPointerMove, { passive: true });
   }
 
   _animate() {
@@ -387,18 +348,26 @@ export class Phase1Stage {
     const dt = Math.min(this.clock.getDelta(), 0.08);
     this.elapsed += dt;
 
-    // Smooth camera follow
-    this.camera.position.lerp(this.desiredCamPos, Math.min(1, dt * 7));
-    this.currentCamTarget.lerp(this.desiredCamTarget, Math.min(1, dt * 7));
-    this.camera.lookAt(this.currentCamTarget);
+    this.smoothPointer.lerp(this.pointerOffset, Math.min(1, dt * 4));
 
-    // Shutter rises smoothly into header box
+    // Smooth steadycam follow + subtle natural look-around parallax
+    this.camera.position.lerp(this.desiredCamPos, Math.min(1, dt * 6));
+    this.currentCamTarget.lerp(this.desiredCamTarget, Math.min(1, dt * 6));
+    this.camera.lookAt(
+      this.currentCamTarget.x + this.smoothPointer.x,
+      this.currentCamTarget.y + this.smoothPointer.y,
+      this.currentCamTarget.z
+    );
+
     if (this.shutterGroup) {
       const targetScaleY = Math.max(0.06, 1 - this.shutterOpen * 0.94);
       this.shutterGroup.scale.y += (targetScaleY - this.shutterGroup.scale.y) * Math.min(1, dt * 12);
     }
 
-    // Mascot human-speed walk-to-target (hurries if far, never teleports)
+    if (this.ceilingFan) {
+      this.ceilingFan.rotation.y += dt * 4.2;
+    }
+
     if (this.mascot) {
       const dx = this.mascotTargetPos.x - this.mascot.position.x;
       const dz = this.mascotTargetPos.z - this.mascot.position.z;
@@ -429,16 +398,19 @@ export class Phase1Stage {
       }
       this.mixer?.update(dt);
 
-      // Subtle natural lip cadence + warm smile while presenting (paused while walking)
       if (this.morphMesh?.morphTargetDictionary && this.morphMesh.morphTargetInfluences) {
         const dict = this.morphMesh.morphTargetDictionary;
         const inf = this.morphMesh.morphTargetInfluences;
         const isStanding = dist <= 0.14;
-        const isSpeakingPose = isStanding && ['greet', 'point', 'thumbs_up', 'clap', 'bow'].includes(this.mascotDesiredAnim);
+        const isSpeakingPose =
+          isStanding && ['greet', 'point', 'thumbs_up', 'clap', 'bow'].includes(this.mascotDesiredAnim);
         if (dict.talk !== undefined) {
           const t = this.elapsed;
           const targetTalk = isSpeakingPose
-            ? Math.min(0.9, Math.max(0, 0.35 + 0.28 * Math.sin(t * 9.5) + 0.2 * Math.sin(t * 15.3) + 0.12 * Math.cos(t * 5.2)))
+            ? Math.min(
+                0.9,
+                Math.max(0, 0.35 + 0.28 * Math.sin(t * 9.5) + 0.2 * Math.sin(t * 15.3) + 0.12 * Math.cos(t * 5.2))
+              )
             : 0;
           inf[dict.talk] += (targetTalk - inf[dict.talk]) * Math.min(1, dt * 12);
         }
@@ -455,6 +427,8 @@ export class Phase1Stage {
   dispose() {
     cancelAnimationFrame(this._rafId);
     window.removeEventListener('resize', this._onResize);
+    window.removeEventListener('pointermove', this._onPointerMove);
+    this.envRT?.dispose();
     this.renderer.dispose();
   }
 }

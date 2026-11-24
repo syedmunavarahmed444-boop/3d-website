@@ -121,21 +121,30 @@ export class ScrollStoryEngine {
       }
     }
 
-    // Gentle parallax glide across the 7 product stops inside Chapter 3 (20%..42%)
+    // Guided showroom pan across all 7 real product racks inside Chapter 3 (20%..42%)
     let activeProductIdx = 0;
     if (chapterIdx === 2) {
-      const [cStart, cEnd] = ch.range;
-      const localT = clamp01((p - cStart) / (cEnd - cStart));
-      activeProductIdx = Math.min(
-        PRODUCTS.length - 1,
-        Math.floor(localT * PRODUCTS.length)
-      );
-      camPos = [
-        camPos[0],
-        camPos[1] - Math.sin(localT * Math.PI) * 0.05,
-        camPos[2] - localT * 2.4,
-      ];
-      camTarget = [camTarget[0], camTarget[1], camTarget[2] - localT * 2.4];
+      const [tw0, tw1] = ch.textWindow;
+      const localT = clamp01((p - tw0) / Math.max(0.001, tw1 - tw0));
+      const scaled = localT * (PRODUCTS.length - 0.001);
+      activeProductIdx = Math.min(PRODUCTS.length - 1, Math.floor(scaled));
+
+      const currProd = PRODUCTS[activeProductIdx];
+      const nextProd = PRODUCTS[Math.min(PRODUCTS.length - 1, activeProductIdx + 1)];
+      const segFrac = scaled - activeProductIdx;
+      // Hold steady on each rack for the first 68% of its slice, then glide smoothly to the next rack
+      const blendT = smoothstep((segFrac - 0.68) / 0.32);
+
+      if (currProd?.focusCam && nextProd?.focusCam && p <= tw1) {
+        camPos = lerpVec3(currProd.focusCam.pos, nextProd.focusCam.pos, blendT);
+        camTarget = lerpVec3(currProd.focusCam.target, nextProd.focusCam.target, blendT);
+      } else if (p > tw1 && chapterIdx < CHAPTERS.length - 1) {
+        const lastFocus = PRODUCTS[PRODUCTS.length - 1].focusCam;
+        const nextCh = CHAPTERS[chapterIdx + 1];
+        const t = smoothstep((p - tw1) / Math.max(0.001, nextCh.textWindow[0] - tw1));
+        camPos = lerpVec3(lastFocus.pos, nextCh.camera.pos, t);
+        camTarget = lerpVec3(lastFocus.target, nextCh.camera.target, t);
+      }
     }
 
     // 3. Shutter lift directly tied to scroll (9%..20%), reverses cleanly when scrolling up
