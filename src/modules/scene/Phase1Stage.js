@@ -42,6 +42,7 @@ export class Phase1Stage {
     this._rafId = null;
     this._initScene();
     this._buildPhase1Blockout();
+    this._loadExterior();
     this._bindResize();
     this._loadShopEmblem();
     this._loadMascot();
@@ -53,8 +54,8 @@ export class Phase1Stage {
     const h = window.innerHeight;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x0b211a);
-    this.scene.fog = new THREE.Fog(0x0b211a, 10, 26);
+    this.scene.background = new THREE.Color(0x8fbbe0);
+    this.scene.fog = new THREE.Fog(0x9ac3e3, 18, 42);
 
     this.camera = new THREE.PerspectiveCamera(42, w / h, 0.1, 60);
     this._applyFramingOffset(w, h);
@@ -70,60 +71,50 @@ export class Phase1Stage {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.2;
+    this.renderer.toneMappingExposure = 1.15;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
     // Warm Kadapa morning daylight + crisp interior showroom lighting
-    const hemi = new THREE.HemisphereLight(0xfff5e0, 0x1a382d, 1.45);
+    const hemi = new THREE.HemisphereLight(0xfff7e8, 0x3b4942, 1.35);
     this.scene.add(hemi);
 
-    const sun = new THREE.DirectionalLight(0xffe8c2, 2.3);
-    sun.position.set(4.5, 7.5, 6.0);
+    const sun = new THREE.DirectionalLight(0xffe7bd, 2.55);
+    sun.position.set(5.5, 8.5, 7.5);
     sun.castShadow = true;
-    sun.shadow.bias = -0.0005;
+    sun.shadow.bias = -0.0004;
     sun.shadow.normalBias = 0.02;
-    sun.shadow.mapSize.set(1024, 1024);
+    sun.shadow.mapSize.set(2048, 2048);
     sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 25;
-    sun.shadow.camera.left = -8;
-    sun.shadow.camera.right = 8;
-    sun.shadow.camera.top = 8;
-    sun.shadow.camera.bottom = -8;
+    sun.shadow.camera.far = 30;
+    sun.shadow.camera.left = -12;
+    sun.shadow.camera.right = 12;
+    sun.shadow.camera.top = 10;
+    sun.shadow.camera.bottom = -6;
     this.scene.add(sun);
 
-    const shopFill = new THREE.PointLight(0xfff4de, 3.5, 14, 1.2);
-    shopFill.position.set(0, 3.0, -3.2);
+    const shopFill = new THREE.PointLight(0xfff4de, 4.2, 14, 1.2);
+    shopFill.position.set(0.6, 3.0, -3.2);
     this.scene.add(shopFill);
 
     // Soft interior front-fill so mascot face & black/gold jersey read crisply inside the shop
-    const interiorFrontFill = new THREE.DirectionalLight(0xfff7eb, 1.25);
+    const interiorFrontFill = new THREE.DirectionalLight(0xfff7eb, 1.15);
     interiorFrontFill.position.set(-1.5, 2.2, 3.5);
     this.scene.add(interiorFrontFill);
   }
 
   _buildPhase1Blockout() {
-    // Exterior road / footpath (z > 1.2)
-    const road = new THREE.Mesh(
-      new THREE.PlaneGeometry(16, 7),
-      new THREE.MeshStandardMaterial({ color: 0x262b2c, roughness: 0.92 })
-    );
-    road.rotation.x = -Math.PI / 2;
-    road.position.set(0, -0.02, 4.7);
-    road.receiveShadow = true;
-    this.scene.add(road);
-
-    // Showroom green artificial turf floor (z: 1.2 down to -7.5)
+    // Showroom green artificial turf floor strictly inside the shop (z: 1.10 down to -7.6)
     const turf = new THREE.Mesh(
-      new THREE.PlaneGeometry(6.8, 9.0),
+      new THREE.PlaneGeometry(5.6, 8.75),
       new THREE.MeshStandardMaterial({ color: 0x165c36, roughness: 0.95 })
     );
     turf.rotation.x = -Math.PI / 2;
-    turf.position.set(0, 0, -3.1);
+    turf.position.set(0.9, 0, -3.22);
     turf.receiveShadow = true;
     this.scene.add(turf);
 
-    // Storefront frame walls + back wall
+    // Storefront interior enclosure walls + back wall (flush behind exterior facade at z = 1.12)
     const wallMat = new THREE.MeshStandardMaterial({ color: 0xe6e1d5, roughness: 0.85 });
     const trimMat = new THREE.MeshStandardMaterial({ color: 0x0b2c22, roughness: 0.55 });
     const goldMat = new THREE.MeshStandardMaterial({
@@ -132,60 +123,48 @@ export class Phase1Stage {
       metalness: 0.55,
     });
 
-    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, 3.4, 9.0), wallMat);
-    leftWall.position.set(-3.4, 1.7, -3.1);
+    const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.4, 8.7), wallMat);
+    leftWall.position.set(-1.86, 1.7, -3.22);
     leftWall.receiveShadow = true;
     this.scene.add(leftWall);
 
-    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.25, 3.4, 9.0), wallMat);
-    rightWall.position.set(3.4, 1.7, -3.1);
+    const rightWall = new THREE.Mesh(new THREE.BoxGeometry(0.22, 3.4, 8.7), wallMat);
+    rightWall.position.set(3.55, 1.7, -3.22);
     rightWall.receiveShadow = true;
     this.scene.add(rightWall);
 
-    const backWall = new THREE.Mesh(new THREE.BoxGeometry(7.0, 3.4, 0.25), wallMat);
-    backWall.position.set(0, 1.7, -7.5);
+    const backWall = new THREE.Mesh(new THREE.BoxGeometry(5.65, 3.4, 0.25), wallMat);
+    backWall.position.set(0.85, 1.7, -7.5);
     backWall.receiveShadow = true;
     this.scene.add(backWall);
 
-    const ceiling = new THREE.Mesh(new THREE.BoxGeometry(7.0, 0.2, 9.0), trimMat);
-    ceiling.position.set(0, 3.45, -3.1);
+    const ceiling = new THREE.Mesh(new THREE.BoxGeometry(5.65, 0.2, 8.7), trimMat);
+    ceiling.position.set(0.85, 3.45, -3.22);
     this.scene.add(ceiling);
 
-    // Storefront pillars & signboard header
-    const leftPillar = new THREE.Mesh(new THREE.BoxGeometry(1.4, 3.4, 0.35), trimMat);
-    leftPillar.position.set(-2.7, 1.7, 1.25);
-    leftPillar.castShadow = true;
-    this.scene.add(leftPillar);
-
-    const rightPillar = new THREE.Mesh(new THREE.BoxGeometry(1.4, 3.4, 0.35), trimMat);
-    rightPillar.position.set(2.7, 1.7, 1.25);
-    rightPillar.castShadow = true;
-    this.scene.add(rightPillar);
-
-    const headerSign = new THREE.Mesh(new THREE.BoxGeometry(6.8, 0.85, 0.4), trimMat);
-    headerSign.position.set(0, 3.15, 1.3);
-    headerSign.castShadow = true;
-    this.scene.add(headerSign);
-
-    const signGoldBorder = new THREE.Mesh(new THREE.BoxGeometry(4.6, 0.52, 0.44), goldMat);
-    signGoldBorder.position.set(0, 3.15, 1.3);
-    this.scene.add(signGoldBorder);
-
-    // Rolling Shutter (rises smoothly with scroll)
+    // Rolling Shutter sized to fit exterior doorway (x: -1.65..+1.65, y: 0..2.70, z: 1.22)
     this.shutterGroup = new THREE.Group();
     this.shutterGroup.position.set(0, 2.7, 1.22);
     const shutterMat = new THREE.MeshStandardMaterial({
       color: 0x164a3a,
-      roughness: 0.45,
-      metalness: 0.4,
+      roughness: 0.42,
+      metalness: 0.48,
     });
-    const shutterSheet = new THREE.Mesh(new THREE.BoxGeometry(4.0, 2.7, 0.08), shutterMat);
-    shutterSheet.position.set(0, -1.35, 0);
+    const shutterSheet = new THREE.Mesh(new THREE.BoxGeometry(3.32, 2.68, 0.06), shutterMat);
+    shutterSheet.position.set(0, -1.34, 0);
     shutterSheet.castShadow = true;
+    shutterSheet.receiveShadow = true;
     this.shutterGroup.add(shutterSheet);
 
-    const shutterBottomBar = new THREE.Mesh(new THREE.BoxGeometry(4.02, 0.1, 0.12), goldMat);
-    shutterBottomBar.position.set(0, -2.68, 0);
+    const ribMat = new THREE.MeshStandardMaterial({ color: 0x0d2f25, roughness: 0.5, metalness: 0.55 });
+    for (let r = 0; r < 12; r++) {
+      const rib = new THREE.Mesh(new THREE.BoxGeometry(3.30, 0.035, 0.08), ribMat);
+      rib.position.set(0, -0.18 - r * 0.21, 0);
+      this.shutterGroup.add(rib);
+    }
+
+    const shutterBottomBar = new THREE.Mesh(new THREE.BoxGeometry(3.34, 0.1, 0.1), goldMat);
+    shutterBottomBar.position.set(0, -2.66, 0);
     this.shutterGroup.add(shutterBottomBar);
     this.scene.add(this.shutterGroup);
 
@@ -231,6 +210,32 @@ export class Phase1Stage {
     this.scene.add(counterTop);
   }
 
+  _loadExterior() {
+    const loader = new GLTFLoader();
+    loader.setMeshoptDecoder(MeshoptDecoder);
+
+    loader.load(
+      '/models/exterior.glb',
+      (gltf) => {
+        const ext = gltf.scene;
+        ext.traverse((child) => {
+          if (child.isMesh) {
+            const matName = child.material?.name || '';
+            const isGlass = matName.includes('ShopGlass');
+            const isThinWire = child.name.includes('Wire_');
+            child.castShadow = !isGlass && !isThinWire;
+            child.receiveShadow = !isGlass;
+          }
+        });
+        this.scene.add(ext);
+      },
+      undefined,
+      (err) => {
+        console.warn('Could not load exterior.glb:', err);
+      }
+    );
+  }
+
   _loadShopEmblem() {
     const loader = new GLTFLoader();
     loader.setMeshoptDecoder(MeshoptDecoder);
@@ -247,13 +252,9 @@ export class Phase1Stage {
         });
 
         // Front face is +X in raw GLB -> rotate -PI/2 around Y to face +Z (street)
-        frontEmblem.rotation.y = -Math.PI / 2;
-        frontEmblem.scale.setScalar(0.72);
-        frontEmblem.position.set(0, 3.15, 1.62);
-        this.scene.add(frontEmblem);
-
-        // Second emblem mounted on the back legacy wall inside the shop
-        const wallEmblem = frontEmblem.clone(true);
+        // Mounted prominently on the back legacy wall inside the shop
+        const wallEmblem = frontEmblem;
+        wallEmblem.rotation.y = -Math.PI / 2;
         wallEmblem.scale.setScalar(1.1);
         wallEmblem.position.set(0.45, 2.05, -7.28);
         this.scene.add(wallEmblem);

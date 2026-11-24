@@ -132,8 +132,8 @@ export const CHAPTERS = [
     cta: 'Scroll down to open the shop',
     range: [0.0, 0.09],
     textWindow: [0.0, 0.072],
-    camera: { pos: [0.35, 1.82, 7.15], target: [0.0, 1.58, 1.75] },
-    mascot: { pos: [0.0, 0, 2.3], rotY: 0.08, anim: 'greet' },
+    camera: { pos: [1.45, 2.02, 11.85], target: [1.65, 1.82, 1.45] },
+    mascot: { pos: [0.45, 0, 1.95], rotY: 0.08, anim: 'greet' },
   },
   {
     id: 'shutter',
