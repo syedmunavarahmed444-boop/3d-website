@@ -35,10 +35,16 @@ You can customize your store settings without touching any code:
 
 ---
 
-## 4. How to Publish Live on the Internet
+## 4. Live Website on AWS & How to Re-Publish Updates
 
-1. Open a terminal in this folder and run:
-   ```bash
-   npm run build
-   ```
-2. Upload the generated **`dist`** folder (under 5 MB total!) to **AWS S3 + CloudFront**, **Vercel**, **Netlify**, or **Cloudflare Pages**. Google Search (`LocalBusiness` schema) and WhatsApp link previews (`og-share.png`) are already built in!
+Your showroom is hosted live on **AWS (Private S3 + CloudFront HTTPS)**:
+* **Live Website Link:** `https://dfrehykajewwr.cloudfront.net`
+* **Private S3 Bucket:** `sultan-sports-kadapa-796458433659` (`ap-southeast-2`)
+* **CloudFront Distribution ID:** `E2DFA0FZU3IDXN`
+
+Whenever you change a price, phone number, or add your UPI ID in `.env`, run these two commands in PowerShell to publish your update live:
+```powershell
+aws login --profile Lite_aws
+powershell -ExecutionPolicy Bypass -File scripts/deploy-aws.ps1
+```
+*(If you buy a custom domain later like `sultansportskadapa.com`, you can attach it to this same CloudFront distribution.)*
