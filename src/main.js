@@ -1,70 +1,35 @@
-import { ScrollStoryEngine } from './modules/scroll-engine/ScrollStoryEngine.js';
 import { ShowroomStage } from './modules/scene/ShowroomStage.js';
-import { StoryOverlay } from './modules/story-ui/StoryOverlay.js';
-import { CHAPTERS } from './modules/brand/storeData.js';
+import { OnboardingStore } from './modules/onboarding/OnboardingStore.js';
+import { CartStore } from './modules/cart/CartStore.js';
+import { ShowroomUXController } from './modules/showroom-ux/ShowroomUXController.js';
 
 const canvas = document.getElementById('webgl-stage');
-const trackEl = document.getElementById('scroll-track');
 
-let engine = null;
+const onboarding = new OnboardingStore();
+const cart = new CartStore();
+
 let stage = null;
-let currentChapterIdx = 0;
 
-function jumpToChapterIndex(idx) {
-  const clamped = Math.max(0, Math.min(CHAPTERS.length - 1, idx));
-  const ch = CHAPTERS[clamped];
-  const targetP = clamped === 0 ? 0 : (ch.textWindow[0] + ch.textWindow[1]) * 0.5;
-  engine?.scrollToProgress(targetP);
-}
-
-const overlay = new StoryOverlay({
-  onJumpChapter(targetProgress) {
-    engine?.scrollToProgress(targetProgress);
-  },
-  onStepChapter(delta) {
-    jumpToChapterIndex(currentChapterIdx + delta);
-  },
-  onToggleClassic(isOpen) {
-    stage?.setPaused(isOpen);
+const ux = new ShowroomUXController({
+  onboarding,
+  cart,
+  onStageChange(stageState) {
+    stage?.applyStoryState(stageState);
   },
 });
 
 stage = new ShowroomStage(canvas, {
   onProgress(pct) {
-    overlay.setLoadProgress(pct);
+    ux.setLoadProgress(pct);
   },
   onReady() {
-    overlay.setLoadProgress(100);
-    overlay.hideLoader();
+    ux.setLoadProgress(100);
+    ux.hideLoader();
   },
   onError() {
-    overlay.hideLoader();
+    ux.hideLoader();
   },
 });
 
-engine = new ScrollStoryEngine({
-  trackEl,
-  onUpdate(state) {
-    currentChapterIdx = state.chapterIdx;
-    overlay.update(state);
-    stage.applyStoryState(state);
-  },
-});
-
-// Keyboard accessibility: Left / Right arrows jump cleanly between showroom chapters
-window.addEventListener('keydown', (e) => {
-  if (overlay.isClassicOpen) {
-    if (e.key === 'Escape') overlay.setClassicOpen(false);
-    return;
-  }
-  const tag = document.activeElement?.tagName;
-  if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-
-  if (e.key === 'ArrowRight') {
-    e.preventDefault();
-    jumpToChapterIndex(currentChapterIdx + 1);
-  } else if (e.key === 'ArrowLeft') {
-    e.preventDefault();
-    jumpToChapterIndex(currentChapterIdx - 1);
-  }
-});
+// Push initial onboarding camera & closed shutter state right away
+ux.setPhase('onboarding');

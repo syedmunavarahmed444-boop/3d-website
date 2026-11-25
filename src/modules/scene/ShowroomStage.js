@@ -574,7 +574,7 @@ export class ShowroomStage {
 
     if (this.shutterGroup) {
       const targetScaleY = Math.max(0.05, 1 - this.shutterOpen * 0.95);
-      this.shutterGroup.scale.y += (targetScaleY - this.shutterGroup.scale.y) * Math.min(1, dt * 12);
+      this.shutterGroup.scale.y += (targetScaleY - this.shutterGroup.scale.y) * Math.min(1, dt * 4.5);
     }
 
     if (this.ceilingFan) {

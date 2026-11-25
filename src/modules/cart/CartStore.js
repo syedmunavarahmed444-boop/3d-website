@@ -116,11 +116,21 @@ export class CartStore {
     return { lines, totalPacks, totalUnits, totalAmount };
   }
 
-  buildMemoText() {
+  buildMemoText(visitor = null) {
     const { lines, totalPacks, totalUnits, totalAmount } = this.getSummary();
     const greeting = BRAND.whatsappGreetingName || BRAND.owner;
+    const customerTag =
+      visitor && visitor.name && visitor.name !== 'Guest'
+        ? `Customer: ${visitor.name}${visitor.phone ? ` (${visitor.phone})` : ''}`
+        : '';
+
     if (lines.length === 0) {
-      return `Hello ${greeting} (${BRAND.name})! I visited your 3D Showroom and would like to enquire about Retail & Wholesale sports gear prices.`;
+      return [
+        `Hello ${greeting} (${BRAND.name})! I visited your 3D Showroom and would like to enquire about Retail & Wholesale sports gear prices.`,
+        customerTag,
+      ]
+        .filter(Boolean)
+        .join('\n');
     }
 
     const itemLines = lines
@@ -132,6 +142,7 @@ export class CartStore {
 
     return [
       `Hello ${greeting} (${BRAND.name})!`,
+      customerTag,
       `Here is my Kit Bag order from your 3D Showroom:`,
       ``,
       itemLines,
@@ -139,12 +150,14 @@ export class CartStore {
       `Total Packs: ${totalPacks} (${totalUnits} pcs/sets)`,
       `Estimated Total: Rs.${totalAmount.toLocaleString('en-IN')}`,
       `Please confirm availability & pickup at Apsara Circle, Kadapa.`,
-    ].join('\n');
+    ]
+      .filter((line, idx) => line !== '' || idx === 3 || idx === 5)
+      .join('\n');
   }
 
-  buildWhatsAppUrl() {
+  buildWhatsAppUrl(visitor = null) {
     const primaryPhone = BRAND.phones[0].raw;
-    const text = encodeURIComponent(this.buildMemoText());
+    const text = encodeURIComponent(this.buildMemoText(visitor));
     return `https://wa.me/91${primaryPhone}?text=${text}`;
   }
 

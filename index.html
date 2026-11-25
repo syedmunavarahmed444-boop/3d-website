@@ -44,15 +44,7 @@
         "openingHoursSpecification": [
           {
             "@type": "OpeningHoursSpecification",
-            "dayOfWeek": [
-              "Monday",
-              "Tuesday",
-              "Wednesday",
-              "Thursday",
-              "Friday",
-              "Saturday",
-              "Sunday"
-            ],
+            "dayOfWeek": ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"],
             "opens": "06:00",
             "closes": "22:00"
           }
@@ -72,12 +64,13 @@
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="/src/modules/story-ui/styles.css" />
+    <link rel="stylesheet" href="/src/modules/showroom-ux/showroom-ux.css" />
   </head>
   <body>
+    <!-- Loading Overlay -->
     <div id="loader" class="loader" role="status" aria-live="polite">
       <div class="loader-emblem">
-        <img src="/brand/sultan_emblem.png" alt="Sultan Sports Emblem" class="loader-emblem-img" />
+        <img src="/brand/sultan_emblem.png" alt="Sultan Sports Emblem" />
       </div>
       <div class="loader-title">Opening Sultan Sports Kadapa…</div>
       <div class="loader-track">
@@ -86,13 +79,14 @@
       <div id="loader-pct" class="loader-pct">0%</div>
     </div>
 
-    <!-- Quiet screen-reader announcer only for intentional actions -->
-    <div id="sr-announcer" class="sr-only" aria-live="polite"></div>
+    <!-- Full-Bleed 3D Showroom Canvas -->
+    <canvas id="webgl-stage" class="webgl-stage" aria-label="Sultan Sports 3D Showroom"></canvas>
 
-    <header class="topbar">
+    <!-- Persistent Top Bar -->
+    <header id="topbar" class="topbar">
       <div class="brand-lockup">
         <div class="brand-seal">
-          <img src="/brand/sultan_emblem.png" alt="Sultan Sports Logo" class="brand-seal-img" />
+          <img src="/brand/sultan_emblem.png" alt="Sultan Sports Logo" />
         </div>
         <div>
           <div class="brand-name">SULTAN SPORTS KADAPA</div>
@@ -100,117 +94,85 @@
         </div>
       </div>
       <div class="topbar-right">
-        <span class="rating-pill">4.9 ★ · 118 Reviews</span>
-        <button id="classic-open-btn" type="button" class="classic-pill" title="Open fast scrolling price list">
-          Classic List
-        </button>
-        <button id="kitbag-jump-btn" type="button" class="kitbag-pill" title="View Your Kit Bag &amp; WhatsApp Memo">
-          Kit Bag · 0
-        </button>
-        <span id="scroll-pct" class="pct-pill">0%</span>
+        <span id="visitor-badge" class="visitor-pill" hidden>Hi, Guest</span>
+        <a href="tel:+919110744845" class="call-pill">✆ Call</a>
+        <button id="signout-btn" type="button" class="ghost-pill" hidden>Switch User</button>
+        <button id="kitbag-open-btn" type="button" class="kitbag-pill">Kit Bag · 0</button>
       </div>
     </header>
 
-    <!-- Mobile Floating Quick-Call Button -->
-    <a id="mobile-call-fab" class="mobile-call-fab" href="tel:+919110744845" aria-label="Call Sultan Sports Kadapa">
-      ✆ Call
-    </a>
+    <!-- STAGE 1: Generic Onboarding / Signup-Login Gate -->
+    <section id="onboarding-gate" class="onboarding-gate" aria-label="Welcome Sign Up and Sign In">
+      <div class="auth-card">
+        <span class="auth-badge">APSARA CIRCLE, KADAPA · 4.9 ★</span>
+        <h1 class="auth-title">Welcome to Sultan Sports</h1>
+        <p class="auth-desc">
+          Sign up or sign in to open our 3D showroom shutter, browse live Retail &amp; Wholesale racks, and send orders straight to WhatsApp.
+        </p>
 
-    <canvas id="webgl-stage" class="webgl-stage" aria-label="Sultan Sports 3D Showroom"></canvas>
+        <div class="auth-tabs" role="tablist">
+          <button id="auth-tab-signup" type="button" class="auth-tab is-active" role="tab">Sign Up</button>
+          <button id="auth-tab-login" type="button" class="auth-tab" role="tab">Log In</button>
+        </div>
 
-    <!-- Story Card (no noisy aria-live so screen readers aren't spammed while scrolling) -->
-    <aside id="story-card" class="story-card">
-      <div id="card-num" class="card-num">01 · APSARA CIRCLE, KADAPA</div>
-      <h1 id="card-title" class="card-title">Walk into Sultan Sports Kadapa.</h1>
-      <p id="card-body" class="card-body"></p>
-      <div id="card-extra"></div>
-      <div id="card-cta" class="card-cta"></div>
-    </aside>
-
-    <nav class="timeline-dock" aria-label="Showroom Chapters">
-      <div class="progress-rail">
-        <div id="scroll-progress-bar" class="progress-fill"></div>
-      </div>
-      <div class="dock-row">
-        <button id="chapter-prev-btn" type="button" class="dock-arrow" aria-label="Previous chapter" title="Previous chapter (←)">
-          ‹
-        </button>
-        <div id="chapter-nav" class="chapter-nav"></div>
-        <button id="chapter-next-btn" type="button" class="dock-arrow" aria-label="Next chapter" title="Next chapter (→)">
-          ›
-        </button>
-      </div>
-    </nav>
-
-    <main id="scroll-track" class="scroll-track" aria-hidden="true"></main>
-
-    <!-- Plain-HTML Crawlable Store Info & Instant "Classic View" Fast Price Sheet -->
-    <section id="classic-modal" class="classic-modal" aria-label="Sultan Sports Kadapa Classic Price List &amp; Store Directory" hidden>
-      <div class="classic-sheet">
-        <div class="classic-header">
-          <div class="classic-brand">
-            <img src="/brand/sultan_emblem.png" alt="Sultan Sports Emblem" width="44" height="44" />
-            <div>
-              <h2>Sultan Sports Kadapa — Quick Price List</h2>
-              <p>Near Apsara Theatre, Opp. Apoorva Function Hall, Chinna Chauku, Kadapa, AP 516002 · Open Daily 6:00 AM – 10:00 PM</p>
-            </div>
+        <form id="auth-form">
+          <div id="auth-name-field" class="auth-field">
+            <label for="auth-name-input">Your Name</label>
+            <input id="auth-name-input" type="text" placeholder="e.g. Rahul / Kadapa XI Captain" autocomplete="name" />
           </div>
-          <button id="classic-close-btn" type="button" class="classic-close-btn">Back to 3D View ✕</button>
-        </div>
+          <div class="auth-field">
+            <label for="auth-phone-input">Phone / WhatsApp Number</label>
+            <input id="auth-phone-input" type="tel" placeholder="+91 98765 43210" autocomplete="tel" />
+          </div>
+          <button id="auth-submit-btn" type="submit" class="auth-submit-btn">
+            Create Free Pass &amp; Open Shutter →
+          </button>
+        </form>
 
-        <div class="classic-contact-bar">
-          <a href="tel:+919110744845" class="visit-btn">✆ Call +91 91107 44845</a>
-          <a href="tel:+916303974896" class="visit-btn">✆ Wholesale +91 63039 74896</a>
-          <a
-            href="https://www.google.com/maps/search/?api=1&amp;query=Sultan+Sports+Kadapa+Apsara+Theatre+Chinna+Chauku+Kadapa+516002"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="visit-btn is-gold"
-          >
-            Open Google Maps
-          </a>
-        </div>
-
-        <!-- Crawlable Static HTML Fallback + Hydrated Interactive Pack Grid -->
-        <div id="classic-catalog-grid" class="classic-grid">
-          <article class="classic-item">
-            <h3>01 · Kashmir &amp; English Willow Bats — From ₹1,850</h3>
-            <p>1 Pc (Retail) ₹1,850 · 6 Pcs (Club) ₹9,900 · 12 Pcs (Wholesale) ₹18,600</p>
-          </article>
-          <article class="classic-item">
-            <h3>02 · Hard-Tennis &amp; M4 Scoop Bats — From ₹750</h3>
-            <p>1 Pc (Retail) ₹750 · 6 Pcs (Pack) ₹4,100 · 12 Pcs (Carton) ₹7,800</p>
-          </article>
-          <article class="classic-item">
-            <h3>03 · Cricket Pads, Gloves &amp; Helmets — From ₹2,400</h3>
-            <p>1 Set (Retail) ₹2,400 · 5 Sets (Academy) ₹10,800 · 10 Sets (Bulk) ₹20,500</p>
-          </article>
-          <article class="classic-item">
-            <h3>04 · Badminton Rackets &amp; Shuttles — From ₹1,150</h3>
-            <p>1 Racket ₹1,150 · 6 Rackets (Club) ₹6,200 · 12 Tubes Shuttles ₹4,800</p>
-          </article>
-          <article class="classic-item">
-            <h3>05 · Match Footballs &amp; Volleyballs — From ₹890</h3>
-            <p>1 Ball (Retail) ₹890 · 6 Balls (Pack) ₹4,800 · 12 Balls (Wholesale) ₹9,000</p>
-          </article>
-          <article class="classic-item">
-            <h3>06 · Sports Shoes &amp; Team Jerseys — From ₹1,450</h3>
-            <p>1 Pair / Kit ₹1,450 · 11 Kits (Team) ₹13,800 · 25 Kits (Wholesale) ₹29,500</p>
-          </article>
-          <article class="classic-item">
-            <h3>07 · Trophies, Medals &amp; Carrom Boards — From ₹1,600</h3>
-            <p>1 Trophy / Board ₹1,600 · 10 Trophies (Event) ₹6,500 · 25 Awards (Bulk) ₹14,500</p>
-          </article>
-        </div>
-
-        <footer class="classic-footer">
-          <div id="classic-bag-summary" class="classic-bag-summary">Kit Bag: 0 packs</div>
-          <a id="classic-wa-btn" href="https://wa.me/919110744845" target="_blank" rel="noopener noreferrer" class="wa-checkout-btn">
-            Send Order on WhatsApp →
-          </a>
-        </footer>
+        <div class="auth-divider">or browse right away</div>
+        <button id="guest-continue-btn" type="button" class="guest-btn">Continue as Guest →</button>
       </div>
     </section>
+
+    <!-- STAGE 2: Shutter Lifted + Mansoor Welcome + Big "Step Inside" Button -->
+    <section id="welcome-hero" class="welcome-hero" hidden aria-label="Enter Showroom">
+      <div class="welcome-eyebrow">SHUTTER OPEN · MANSOOR WELCOMES YOU</div>
+      <h2 id="welcome-greeting" class="welcome-title">Welcome to Sultan Sports!</h2>
+      <p class="welcome-sub">
+        The shutter is up—step inside with Mansoor to explore all 7 Retail &amp; Wholesale sports racks.
+      </p>
+      <button id="step-inside-btn" type="button" class="step-inside-btn">
+        Step Inside the Shop →
+      </button>
+    </section>
+
+    <!-- STAGE 3: Live 3D Rack Indicator + Floating Product & Price List beside Mansoor -->
+    <div id="live-spot-badge" class="live-spot-badge" hidden>
+      Mansoor at Front-Left Counter · Hover or tap any product
+    </div>
+
+    <aside id="floating-catalog" class="floating-catalog" hidden aria-label="Products and Prices">
+      <div class="panel-header">
+        <div class="panel-tabs">
+          <button id="panel-tab-catalog" type="button" class="panel-tab is-active">Products &amp; Prices</button>
+          <button id="panel-tab-bag" type="button" class="panel-tab">Kit Bag (0)</button>
+        </div>
+        <div class="panel-hint-row">
+          <span id="panel-subtitle" class="panel-subtitle">Hover or click any item to view it in 3D</span>
+          <button id="back-to-counter-btn" type="button" class="back-counter-btn" hidden>← Counter</button>
+        </div>
+      </div>
+
+      <div id="catalog-scroll-list" class="catalog-scroll-list"></div>
+      <div id="bag-checkout-view" class="bag-checkout-view" hidden></div>
+
+      <footer class="panel-footer">
+        <div id="panel-footer-summary" class="panel-footer-summary">Tap + on any pack to build your order</div>
+        <a id="panel-wa-btn" href="https://wa.me/919110744845" target="_blank" rel="noopener noreferrer" class="fx-wa-btn">
+          Send Order on WhatsApp →
+        </a>
+      </footer>
+    </aside>
 
     <script type="module" src="/src/main.js"></script>
   </body>
