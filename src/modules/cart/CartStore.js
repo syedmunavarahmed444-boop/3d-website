@@ -3,8 +3,8 @@ import { BRAND, PRODUCTS } from '../brand/storeData.js';
 const STORAGE_KEY = 'sultan_sports_kitbag_v1';
 
 /**
- * Manages the interactive Retail & Wholesale Kit Bag across chapters,
- * persists selections locally, and formats the instant WhatsApp order memo.
+ * Manages the interactive Retail & Wholesale Kit Bag across chapters & Classic View,
+ * persists selections locally, and builds WhatsApp + real NPCI UPI payment URIs.
  */
 export class CartStore {
   constructor() {
@@ -79,10 +79,10 @@ export class CartStore {
 
   loadSampleClubOrder() {
     this.items.clear();
-    this.items.set(this.makeKey('willow-bats', 1), 1); // 6 Pcs Club Willow Bats
-    this.items.set(this.makeKey('tennis-bats', 0), 2); // 2 M4 Scoop Bats
-    this.items.set(this.makeKey('footballs', 1), 1); // 6 Balls Pack
-    this.items.set(this.makeKey('trophies-carrom', 1), 1); // 10 Event Trophies
+    this.items.set(this.makeKey('willow-bats', 1), 1);
+    this.items.set(this.makeKey('tennis-bats', 0), 2);
+    this.items.set(this.makeKey('footballs', 1), 1);
+    this.items.set(this.makeKey('trophies-carrom', 1), 1);
     this._notify();
   }
 
@@ -118,8 +118,9 @@ export class CartStore {
 
   buildMemoText() {
     const { lines, totalPacks, totalUnits, totalAmount } = this.getSummary();
+    const greeting = BRAND.whatsappGreetingName || BRAND.owner;
     if (lines.length === 0) {
-      return `Hello Mansoor bhai (${BRAND.name})! I visited your 3D Showroom and would like to enquire about Retail & Wholesale sports gear prices.`;
+      return `Hello ${greeting} (${BRAND.name})! I visited your 3D Showroom and would like to enquire about Retail & Wholesale sports gear prices.`;
     }
 
     const itemLines = lines
@@ -130,7 +131,7 @@ export class CartStore {
       .join('\n');
 
     return [
-      `Hello Mansoor bhai (${BRAND.name})!`,
+      `Hello ${greeting} (${BRAND.name})!`,
       `Here is my Kit Bag order from your 3D Showroom:`,
       ``,
       itemLines,
@@ -145,5 +146,19 @@ export class CartStore {
     const primaryPhone = BRAND.phones[0].raw;
     const text = encodeURIComponent(this.buildMemoText());
     return `https://wa.me/91${primaryPhone}?text=${text}`;
+  }
+
+  buildUpiUri() {
+    if (!BRAND.upiId) return '';
+    const { totalAmount } = this.getSummary();
+    const params = new URLSearchParams({
+      pa: BRAND.upiId,
+      pn: BRAND.name,
+      cu: 'INR',
+    });
+    if (totalAmount > 0) {
+      params.set('am', String(totalAmount));
+    }
+    return `upi://pay?${params.toString()}`;
   }
 }

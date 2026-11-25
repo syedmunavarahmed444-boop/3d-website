@@ -4,8 +4,9 @@ node_modules/
 # Build output
 dist/
 
-# Temporary build/render scratch files
+# Temporary build/render scratch files & raw archived samples
 scripts/temp/
+archive/
 
 # Environment variables
 .env

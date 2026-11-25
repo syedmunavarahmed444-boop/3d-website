@@ -1,23 +1,34 @@
 /**
  * Single source of truth for Sultan Sports Kadapa branding, store details,
  * scroll-story chapters, and product pricing (Retail & Wholesale).
+ * Supports optional .env overrides (VITE_PRIMARY_PHONE, VITE_ALT_PHONE, VITE_OWNER_GREETING, VITE_UPI_ID).
  */
+
+const env = import.meta.env || {};
+const primaryRaw = (env.VITE_PRIMARY_PHONE || '9110744845').replace(/\D/g, '').slice(-10);
+const altRaw = (env.VITE_ALT_PHONE || '6303974896').replace(/\D/g, '').slice(-10);
+
+function fmtPhone(tenDigits) {
+  return `+91 ${tenDigits.slice(0, 5)} ${tenDigits.slice(5)}`;
+}
 
 export const BRAND = {
   name: 'Sultan Sports Kadapa',
   shortName: 'SULTAN SPORTS',
   tagline: 'Retail & Wholesale Sports Store',
   owner: 'Mansoor Syed',
+  whatsappGreetingName: env.VITE_OWNER_GREETING || 'Mansoor bhai',
   instagram: '@sultansports_kadapa',
   rating: '4.9',
   reviewCount: 118,
   hours: 'Open Daily · 6:00 AM – 10:00 PM',
   address: 'Near Apsara Theatre, Opp. Apoorva Function Hall, Chinna Chauku, Kadapa, AP 516002',
   phones: [
-    { label: 'Primary', raw: '9110744845', display: '+91 91107 44845' },
-    { label: 'Wholesale / Alt', raw: '6303974896', display: '+91 63039 74896' },
+    { label: 'Primary', raw: primaryRaw, display: fmtPhone(primaryRaw) },
+    { label: 'Wholesale / Alt', raw: altRaw, display: fmtPhone(altRaw) },
   ],
-  upiId: '', // Leave empty until launch — QR stays stamped DEMO
+  // Leave empty until launch (hides QR box cleanly); set VITE_UPI_ID or this string to render a real scannable UPI QR!
+  upiId: (env.VITE_UPI_ID || '').trim(),
   colors: {
     bg: '#081f18',
     surface: '#0d2b22',
@@ -38,8 +49,8 @@ export const PRODUCTS = [
     name: 'Kashmir & English Willow Bats',
     subtitle: 'Hand-picked willow blades with balanced sweet spot & neon grip',
     retailPrice: 1850,
-    focusCam: { pos: [-0.22, 1.44, 0.58], target: [1.15, 0.96, -1.85] },
-    mascot: { pos: [0.42, 0, -2.55], rotY: 0.35, anim: 'point' },
+    focusCam: { pos: [-0.24, 1.44, 0.58], target: [1.44, 0.96, -1.52] },
+    mascot: { pos: [-0.62, 0, -2.35], rotY: 0.65, anim: 'point' },
     packs: [
       { label: '1 Pc (Retail)', qty: 1, price: 1850 },
       { label: '6 Pcs (Club)', qty: 6, price: 9900 },
@@ -53,8 +64,8 @@ export const PRODUCTS = [
     name: 'Hard-Tennis & Scoop Bats',
     subtitle: 'Trending M4 Beast Edition dual-scoop blades for Kadapa turf matches',
     retailPrice: 750,
-    focusCam: { pos: [0.05, 1.38, -0.65], target: [0.22, 0.88, -4.15] },
-    mascot: { pos: [0.78, 0, -2.85], rotY: -0.45, anim: 'point' },
+    focusCam: { pos: [0.02, 1.38, -0.65], target: [0.16, 0.88, -4.15] },
+    mascot: { pos: [0.92, 0, -2.88], rotY: -0.52, anim: 'point' },
     packs: [
       { label: '1 Pc (Retail)', qty: 1, price: 750 },
       { label: '6 Pcs (Pack)', qty: 6, price: 4100 },
@@ -84,7 +95,7 @@ export const PRODUCTS = [
     subtitle: 'Graphite strung frames, feathered shuttles & Mavis tournament tubes',
     retailPrice: 1150,
     focusCam: { pos: [-0.36, 1.48, 0.52], target: [1.55, 1.42, -0.65] },
-    mascot: { pos: [0.55, 0, -2.35], rotY: 0.25, anim: 'point' },
+    mascot: { pos: [0.55, 0, -2.45], rotY: 0.25, anim: 'point' },
     packs: [
       { label: '1 Racket', qty: 1, price: 1150 },
       { label: '6 Rackets (Club)', qty: 6, price: 6200 },
@@ -99,7 +110,7 @@ export const PRODUCTS = [
     subtitle: 'Stitched leather turf footballs & 18-panel tournament volleyballs',
     retailPrice: 890,
     focusCam: { pos: [-0.32, 1.44, -0.55], target: [1.52, 1.18, -2.35] },
-    mascot: { pos: [0.45, 0, -3.15], rotY: 0.32, anim: 'point' },
+    mascot: { pos: [0.45, 0, -3.18], rotY: 0.32, anim: 'point' },
     packs: [
       { label: '1 Ball (Retail)', qty: 1, price: 890 },
       { label: '6 Balls (Pack)', qty: 6, price: 4800 },
@@ -114,7 +125,7 @@ export const PRODUCTS = [
     subtitle: 'Turf studs, court sneakers & custom sublimated Kadapa squad kits',
     retailPrice: 1450,
     focusCam: { pos: [-0.25, 1.48, -1.05], target: [1.35, 1.38, -3.62] },
-    mascot: { pos: [0.32, 0, -3.25], rotY: 0.42, anim: 'point' },
+    mascot: { pos: [-0.45, 0, -3.25], rotY: 0.55, anim: 'point' },
     packs: [
       { label: '1 Pair / Kit', qty: 1, price: 1450 },
       { label: '11 Kits (Team)', qty: 11, price: 13800 },
@@ -129,7 +140,7 @@ export const PRODUCTS = [
     subtitle: '22k gold tournament cups, wooden plaques & rosewood match carrom',
     retailPrice: 1600,
     focusCam: { pos: [0.02, 1.52, -0.82], target: [0.35, 1.72, -4.42] },
-    mascot: { pos: [0.78, 0, -2.95], rotY: -0.38, anim: 'clap' },
+    mascot: { pos: [0.82, 0, -2.95], rotY: -0.38, anim: 'clap' },
     packs: [
       { label: '1 Trophy / Board', qty: 1, price: 1600 },
       { label: '10 Trophies (Event)', qty: 10, price: 6500 },
@@ -138,11 +149,6 @@ export const PRODUCTS = [
   },
 ];
 
-/**
- * 8-chapter scroll timeline (0..1).
- * Every shot follows the "Open Right Two-Thirds Rule" so the bottom-left UI card
- * never covers Mansoor, the 3D counter emblem, the QR stand, or active racks.
- */
 export const CHAPTERS = [
   {
     id: 'opening',
@@ -150,7 +156,7 @@ export const CHAPTERS = [
     num: '01 · APSARA CIRCLE, KADAPA',
     title: 'Walk into Sultan Sports Kadapa.',
     body: 'Morning opens at Apsara Circle. From a single willow bat to full tournament kits—Mansoor welcomes you at the shutter.',
-    cta: 'Scroll down to open the shop',
+    cta: 'Scroll or press → to open the shop',
     range: [0.0, 0.09],
     textWindow: [0.0, 0.072],
     camera: { pos: [0.65, 1.82, 10.2], target: [0.85, 1.72, 1.35] },
@@ -171,12 +177,12 @@ export const CHAPTERS = [
     id: 'showcase',
     label: 'Racks',
     num: '03 · SHOWROOM TOUR',
-    title: 'Pick Retail or Wholesale on every rack.',
+    title: 'Pick Retail or Wholesale packs.',
     body: 'Tap + on any pack to build your Kit Bag—willow blades, M4 scoop bats, pads, gloves, feathered shuttles, footballs, and gold cups.',
     range: [0.20, 0.42],
     textWindow: [0.22, 0.40],
-    camera: { pos: [-0.22, 1.44, 0.58], target: [1.15, 0.96, -1.85] },
-    mascot: { pos: [0.42, 0, -2.55], rotY: 0.35, anim: 'point' },
+    camera: { pos: [-0.24, 1.44, 0.58], target: [1.18, 0.96, -1.85] },
+    mascot: { pos: [-0.62, 0, -2.35], rotY: 0.65, anim: 'point' },
     solidPanel: true,
     showProductPreview: true,
   },
@@ -218,7 +224,7 @@ export const CHAPTERS = [
     label: 'Bill',
     num: '07 · YOUR KIT BAG & MEMO',
     title: 'Step up to our front-left counter.',
-    body: 'Review your itemized Kit Bag below, check the 3D Demo QR stand & gold crest on our glass counter, or send your list to Mansoor on WhatsApp.',
+    body: 'Review your itemized Retail & Wholesale Kit Bag below and send your exact list straight to WhatsApp for instant confirmation.',
     range: [0.79, 0.89],
     textWindow: [0.81, 0.875],
     camera: { pos: [1.08, 1.46, 0.86], target: [-0.96, 0.88, -0.34] },

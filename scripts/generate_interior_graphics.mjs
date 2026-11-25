@@ -269,26 +269,19 @@ renderGraphic(
   </div>`
 );
 
-// 6. Front-Left Counter Tabletop Stand (Demo QR + Order Desk Sign)
+// 6. Front-Left Counter Tabletop Plaque (Clean Store Billing & Wholesale Desk Sign — no fake QR!)
 renderGraphic(
   'counter_qr_stand',
   512,
   640,
-  `<div style="width:100%;height:100%;background:#0a261d;border:12px solid #e8b448;border-radius:24px;padding:26px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;color:#f5f1e6;text-align:center;">
-    <div style="font-size:32px;font-weight:900;color:#e8b448;letter-spacing:2px;">SULTAN SPORTS</div>
-    <div style="font-size:20px;font-weight:700;color:#b8cac1;">BILLING &amp; WHOLESALE DESK</div>
-    <div style="width:280px;height:280px;background:#fff;border-radius:16px;padding:20px;position:relative;display:grid;grid-template-columns:repeat(5,1fr);gap:8px;">
-      ${Array.from({ length: 25 })
-        .map(
-          (_, i) =>
-            `<div style="background:${[0, 1, 4, 5, 6, 8, 12, 14, 16, 18, 20, 21, 24].includes(i) ? '#0f172a' : '#e2e8f0'};border-radius:4px;"></div>`
-        )
-        .join('')}
-      <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
-        <span style="background:rgba(220,38,38,0.92);color:#fff;font-size:34px;font-weight:900;padding:6px 18px;border-radius:8px;transform:rotate(-15deg);border:3px solid #fff;">DEMO QR</span>
-      </div>
+  `<div style="width:100%;height:100%;background:linear-gradient(180deg,#081f18 0%,#0d2b22 100%);border:14px solid #e8b448;border-radius:24px;padding:28px;display:flex;flex-direction:column;align-items:center;justify-content:space-between;color:#f5f1e6;text-align:center;">
+    <div style="font-size:28px;font-weight:900;color:#e8b448;letter-spacing:2px;">★ SULTAN SPORTS ★</div>
+    <img src="${EMBLEM_DATA}" style="width:220px;height:220px;object-fit:contain;filter:drop-shadow(0 8px 16px rgba(0,0,0,0.5));" />
+    <div>
+      <div style="font-size:32px;font-weight:900;color:#fde047;">WHOLESALE &amp; BILLING</div>
+      <div style="font-size:20px;font-weight:700;color:#b8cac1;margin-top:6px;">GST / Club / School Orders</div>
     </div>
-    <div style="font-size:22px;font-weight:800;color:#fde047;">91107 44845 · KADAPA</div>
+    <div style="background:#e8b448;color:#081f18;padding:10px 20px;border-radius:10px;font-size:24px;font-weight:900;width:100%;">✆ 91107 44845</div>
   </div>`
 );
 

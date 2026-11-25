@@ -3,7 +3,66 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Sultan Sports Kadapa · Walk-In 3D Sports Showroom</title>
+    <title>Sultan Sports Kadapa · Walk-In 3D Retail &amp; Wholesale Sports Showroom</title>
+    <meta
+      name="description"
+      content="Sultan Sports Kadapa — Retail &amp; Wholesale sports store near Apsara Theatre, Chinna Chauku, Kadapa (4.9★, 118 reviews). English &amp; Kashmir willow bats, M4 scoop bats, cricket kits, badminton, footballs, team jerseys &amp; trophies. Order on WhatsApp: +91 91107 44845."
+    />
+
+    <!-- WhatsApp & Social Link Preview (Open Graph) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Sultan Sports Kadapa · 3D Walk-In Sports Showroom" />
+    <meta
+      property="og:description"
+      content="Walk inside Sultan Sports Kadapa at Apsara Circle! Browse Retail &amp; Wholesale prices on Willow &amp; M4 Scoop Bats, Cricket Kits, Badminton, Footballs, Jerseys &amp; Trophies—send your order straight to WhatsApp."
+    />
+    <meta property="og:image" content="/brand/og-share.png" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Sultan Sports Kadapa · Retail &amp; Wholesale Sports Store" />
+    <meta name="twitter:image" content="/brand/og-share.png" />
+
+    <!-- Google LocalBusiness (SportingGoodsStore) Structured Data -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "SportingGoodsStore",
+        "name": "Sultan Sports Kadapa",
+        "image": "/brand/og-share.png",
+        "description": "Retail and Wholesale sports showroom in Kadapa offering Kashmir & English willow cricket bats, M4 scoop bats, cricket kits, badminton rackets, footballs, custom team jerseys, carrom boards, and tournament trophies.",
+        "telephone": "+91-91107-44845",
+        "priceRange": "₹₹",
+        "address": {
+          "@type": "PostalAddress",
+          "streetAddress": "Near Apsara Theatre, Opp. Apoorva Function Hall, Chinna Chauku",
+          "addressLocality": "Kadapa",
+          "addressRegion": "AP",
+          "postalCode": "516002",
+          "addressCountry": "IN"
+        },
+        "openingHoursSpecification": [
+          {
+            "@type": "OpeningHoursSpecification",
+            "dayOfWeek": [
+              "Monday",
+              "Tuesday",
+              "Wednesday",
+              "Thursday",
+              "Friday",
+              "Saturday",
+              "Sunday"
+            ],
+            "opens": "06:00",
+            "closes": "22:00"
+          }
+        ],
+        "aggregateRating": {
+          "@type": "AggregateRating",
+          "ratingValue": "4.9",
+          "reviewCount": "118"
+        }
+      }
+    </script>
+
     <link rel="icon" type="image/png" href="/brand/sultan_emblem.png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -25,6 +84,9 @@
       <div id="loader-pct" class="loader-pct">0%</div>
     </div>
 
+    <!-- Quiet screen-reader announcer only for intentional actions -->
+    <div id="sr-announcer" class="sr-only" aria-live="polite"></div>
+
     <header class="topbar">
       <div class="brand-lockup">
         <div class="brand-seal">
@@ -37,6 +99,9 @@
       </div>
       <div class="topbar-right">
         <span class="rating-pill">4.9 ★ · 118 Reviews</span>
+        <button id="classic-open-btn" type="button" class="classic-pill" title="Open fast scrolling price list">
+          Classic List
+        </button>
         <button id="kitbag-jump-btn" type="button" class="kitbag-pill" title="View Your Kit Bag &amp; WhatsApp Memo">
           Kit Bag · 0
         </button>
@@ -44,9 +109,15 @@
       </div>
     </header>
 
+    <!-- Mobile Floating Quick-Call Button -->
+    <a id="mobile-call-fab" class="mobile-call-fab" href="tel:+919110744845" aria-label="Call Sultan Sports Kadapa">
+      ✆ Call
+    </a>
+
     <canvas id="webgl-stage" class="webgl-stage" aria-label="Sultan Sports 3D Showroom"></canvas>
 
-    <aside id="story-card" class="story-card" aria-live="polite">
+    <!-- Story Card (no noisy aria-live so screen readers aren't spammed while scrolling) -->
+    <aside id="story-card" class="story-card">
       <div id="card-num" class="card-num">01 · APSARA CIRCLE, KADAPA</div>
       <h1 id="card-title" class="card-title">Walk into Sultan Sports Kadapa.</h1>
       <p id="card-body" class="card-body"></p>
@@ -58,10 +129,86 @@
       <div class="progress-rail">
         <div id="scroll-progress-bar" class="progress-fill"></div>
       </div>
-      <div id="chapter-nav" class="chapter-nav"></div>
+      <div class="dock-row">
+        <button id="chapter-prev-btn" type="button" class="dock-arrow" aria-label="Previous chapter" title="Previous chapter (←)">
+          ‹
+        </button>
+        <div id="chapter-nav" class="chapter-nav"></div>
+        <button id="chapter-next-btn" type="button" class="dock-arrow" aria-label="Next chapter" title="Next chapter (→)">
+          ›
+        </button>
+      </div>
     </nav>
 
     <main id="scroll-track" class="scroll-track" aria-hidden="true"></main>
+
+    <!-- Plain-HTML Crawlable Store Info & Instant "Classic View" Fast Price Sheet -->
+    <section id="classic-modal" class="classic-modal" aria-label="Sultan Sports Kadapa Classic Price List &amp; Store Directory" hidden>
+      <div class="classic-sheet">
+        <div class="classic-header">
+          <div class="classic-brand">
+            <img src="/brand/sultan_emblem.png" alt="Sultan Sports Emblem" width="44" height="44" />
+            <div>
+              <h2>Sultan Sports Kadapa — Quick Price List</h2>
+              <p>Near Apsara Theatre, Opp. Apoorva Function Hall, Chinna Chauku, Kadapa, AP 516002 · Open Daily 6:00 AM – 10:00 PM</p>
+            </div>
+          </div>
+          <button id="classic-close-btn" type="button" class="classic-close-btn">Back to 3D View ✕</button>
+        </div>
+
+        <div class="classic-contact-bar">
+          <a href="tel:+919110744845" class="visit-btn">✆ Call +91 91107 44845</a>
+          <a href="tel:+916303974896" class="visit-btn">✆ Wholesale +91 63039 74896</a>
+          <a
+            href="https://www.google.com/maps/search/?api=1&amp;query=Sultan+Sports+Kadapa+Apsara+Theatre+Chinna+Chauku+Kadapa+516002"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="visit-btn is-gold"
+          >
+            Open Google Maps
+          </a>
+        </div>
+
+        <!-- Crawlable Static HTML Fallback + Hydrated Interactive Pack Grid -->
+        <div id="classic-catalog-grid" class="classic-grid">
+          <article class="classic-item">
+            <h3>01 · Kashmir &amp; English Willow Bats — From ₹1,850</h3>
+            <p>1 Pc (Retail) ₹1,850 · 6 Pcs (Club) ₹9,900 · 12 Pcs (Wholesale) ₹18,600</p>
+          </article>
+          <article class="classic-item">
+            <h3>02 · Hard-Tennis &amp; M4 Scoop Bats — From ₹750</h3>
+            <p>1 Pc (Retail) ₹750 · 6 Pcs (Pack) ₹4,100 · 12 Pcs (Carton) ₹7,800</p>
+          </article>
+          <article class="classic-item">
+            <h3>03 · Cricket Pads, Gloves &amp; Helmets — From ₹2,400</h3>
+            <p>1 Set (Retail) ₹2,400 · 5 Sets (Academy) ₹10,800 · 10 Sets (Bulk) ₹20,500</p>
+          </article>
+          <article class="classic-item">
+            <h3>04 · Badminton Rackets &amp; Shuttles — From ₹1,150</h3>
+            <p>1 Racket ₹1,150 · 6 Rackets (Club) ₹6,200 · 12 Tubes Shuttles ₹4,800</p>
+          </article>
+          <article class="classic-item">
+            <h3>05 · Match Footballs &amp; Volleyballs — From ₹890</h3>
+            <p>1 Ball (Retail) ₹890 · 6 Balls (Pack) ₹4,800 · 12 Balls (Wholesale) ₹9,000</p>
+          </article>
+          <article class="classic-item">
+            <h3>06 · Sports Shoes &amp; Team Jerseys — From ₹1,450</h3>
+            <p>1 Pair / Kit ₹1,450 · 11 Kits (Team) ₹13,800 · 25 Kits (Wholesale) ₹29,500</p>
+          </article>
+          <article class="classic-item">
+            <h3>07 · Trophies, Medals &amp; Carrom Boards — From ₹1,600</h3>
+            <p>1 Trophy / Board ₹1,600 · 10 Trophies (Event) ₹6,500 · 25 Awards (Bulk) ₹14,500</p>
+          </article>
+        </div>
+
+        <footer class="classic-footer">
+          <div id="classic-bag-summary" class="classic-bag-summary">Kit Bag: 0 packs</div>
+          <a id="classic-wa-btn" href="https://wa.me/919110744845" target="_blank" rel="noopener noreferrer" class="wa-checkout-btn">
+            Send Order on WhatsApp →
+          </a>
+        </footer>
+      </div>
+    </section>
 
     <script type="module" src="/src/main.js"></script>
   </body>
