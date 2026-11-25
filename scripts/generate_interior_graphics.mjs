@@ -67,20 +67,20 @@ renderGraphic(
   </div>`
 );
 
-// Helper for realistic willow cricket bat blade face texture
-function willowBase(innerHtml, toeColor = '#dc2626') {
-  const grains = Array.from({ length: 9 })
+// Helper for rich golden-honey English/Kashmir willow cricket bat blade face texture (never bleached white)
+function willowBase(innerHtml, toeColor = '#b91c1c') {
+  const grains = Array.from({ length: 11 })
     .map(
       (_, i) =>
-        `<div style="position:absolute;top:0;bottom:0;left:${9 + i * 10.2}%;width:2px;background:rgba(138,94,48,0.18);"></div>`
+        `<div style="position:absolute;top:0;bottom:0;left:${6 + i * 8.8}%;width:3px;background:rgba(120,72,24,0.26);"></div>`
     )
     .join('');
-  return `<div style="width:100%;height:100%;background:linear-gradient(90deg,#e7cda5 0%,#f3dfc1 22%,#f6e7ce 50%,#eed7b3 78%,#dfbe91 100%);position:relative;display:flex;flex-direction:column;align-items:center;">
+  return `<div style="width:100%;height:100%;background:linear-gradient(90deg,#cfa26a 0%,#dfb882 22%,#e6c594 50%,#dbb279 78%,#c6955b 100%);position:relative;display:flex;flex-direction:column;align-items:center;">
     ${grains}
     <div style="position:relative;z-index:2;width:100%;flex:1;display:flex;flex-direction:column;align-items:center;">
       ${innerHtml}
     </div>
-    <div style="position:relative;z-index:2;width:100%;height:44px;background:${toeColor};border-top:5px solid #1e293b;"></div>
+    <div style="position:relative;z-index:2;width:100%;height:52px;background:${toeColor};border-top:6px solid #0f172a;"></div>
   </div>`;
 }
 
@@ -373,19 +373,77 @@ renderGraphic(
   </div>`
 );
 
-// 9. Woven Transparent Badminton Strings with Red 'S' Stencil
+// 9. Elliptical Woven Transparent Badminton Strings with Subtle Pro Stencil
 const vLines = Array.from({ length: 18 })
-  .map((_, i) => `<div style="position:absolute;top:0;bottom:0;left:${5 + i * 5.3}%;width:2px;background:rgba(248,250,252,0.88);"></div>`)
+  .map((_, i) => `<div style="position:absolute;top:0;bottom:0;left:${5 + i * 5.3}%;width:1.5px;background:rgba(241,245,249,0.78);"></div>`)
   .join('');
 const hLines = Array.from({ length: 22 })
-  .map((_, i) => `<div style="position:absolute;left:0;right:0;top:${4 + i * 4.4}%;height:2px;background:rgba(241,245,249,0.88);"></div>`)
+  .map((_, i) => `<div style="position:absolute;left:0;right:0;top:${4 + i * 4.4}%;height:1.5px;background:rgba(241,245,249,0.78);"></div>`)
   .join('');
 renderTransparentGraphic(
   'racket_strings',
   256,
   256,
-  `<div style="width:100%;height:100%;position:relative;display:flex;align-items:center;justify-content:center;">
-    ${vLines}${hLines}
-    <div style="position:relative;z-index:2;font-size:128px;font-weight:900;color:rgba(220,38,38,0.85);font-family:Arial,sans-serif;">S</div>
+  `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:6px;">
+    <div style="width:100%;height:100%;border-radius:50%;overflow:hidden;position:relative;display:flex;align-items:center;justify-content:center;">
+      ${vLines}${hLines}
+      <div style="position:relative;z-index:2;width:68px;height:68px;border:5px solid rgba(220,38,38,0.68);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:38px;font-weight:900;color:rgba(220,38,38,0.68);">S</div>
+    </div>
+  </div>`
+);
+
+// 10. M4 Beast Edition Dual-Oval Back Scoop Texture
+renderGraphic(
+  'bat_m4_back',
+  256,
+  1024,
+  willowBase(`
+    <div style="margin-top:88px;font-size:28px;font-weight:900;color:#7c2d12;letter-spacing:2px;">M4 BEAST</div>
+    <div style="margin-top:36px;display:flex;flex-direction:column;gap:28px;align-items:center;">
+      <div style="width:138px;height:260px;border-radius:70px;background:radial-gradient(ellipse at center,#1c1917 0%,#292524 68%,#78350f 100%);border:6px solid #dc2626;box-shadow:inset 0 12px 24px rgba(0,0,0,0.85);"></div>
+      <div style="width:146px;height:290px;border-radius:74px;background:radial-gradient(ellipse at center,#1c1917 0%,#292524 68%,#78350f 100%);border:6px solid #dc2626;box-shadow:inset 0 12px 24px rgba(0,0,0,0.85);"></div>
+    </div>
+  `)
+);
+
+// 11. Yonex/Mavis Style Printed Shuttlecock Tube Wrap
+renderGraphic(
+  'shuttle_tube',
+  256,
+  512,
+  `<div style="width:100%;height:100%;background:linear-gradient(180deg,#f8fafc 0%,#f8fafc 8%,#1d4ed8 8%,#1e40af 58%,#16a34a 58%,#15803d 92%,#f8fafc 92%);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff;text-align:center;padding:18px;">
+    <div style="font-size:34px;font-weight:900;color:#fde047;letter-spacing:2px;">MAVIS 350</div>
+    <div style="font-size:18px;font-weight:800;margin-top:8px;">TOURNAMENT NYLON</div>
+    <div style="margin-top:46px;background:#fde047;color:#0f172a;padding:6px 16px;border-radius:999px;font-size:20px;font-weight:900;">12 SHUTTLES</div>
+  </div>`
+);
+
+// 12. Crisp White Woven Polypropylene Wholesale Dispatch Sack Texture
+renderGraphic(
+  'sack_wholesale',
+  512,
+  512,
+  `<div style="width:100%;height:100%;background:repeating-linear-gradient(0deg,#f8fafc 0px,#f8fafc 4px,#e2e8f0 4px,#e2e8f0 6px);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:38px;border-top:18px solid #dc2626;border-bottom:18px solid #1d4ed8;text-align:center;">
+    <div style="border:5px solid #1d4ed8;padding:20px 28px;border-radius:12px;background:rgba(255,255,255,0.82);">
+      <div style="font-size:44px;font-weight:900;color:#dc2626;letter-spacing:2px;">SULTAN SPORTS</div>
+      <div style="font-size:26px;font-weight:900;color:#1e3a8a;margin-top:6px;">WHOLESALE DISPATCH · KADAPA</div>
+      <div style="font-size:22px;font-weight:800;color:#0f172a;margin-top:10px;">BULK CLUB &amp; SCHOOL KITS</div>
+    </div>
+  </div>`
+);
+
+// 13. Crisp Showroom Match Football Texture (White, Black & Royal-Blue/Gold Pentagon Panels)
+renderGraphic(
+  'football_match_tex',
+  512,
+  256,
+  `<div style="width:100%;height:100%;background:#f8fafc;display:grid;grid-template-columns:repeat(6,1fr);grid-template-rows:repeat(3,1fr);gap:3px;padding:3px;">
+    ${Array.from({ length: 18 })
+      .map((_, i) => {
+        const bg = i % 5 === 0 ? '#0f172a' : i % 4 === 1 ? '#1d4ed8' : '#f8fafc';
+        const bd = i % 3 === 0 ? '#eab308' : '#1e293b';
+        return `<div style="background:${bg};border:3px solid ${bd};border-radius:10px;"></div>`;
+      })
+      .join('')}
   </div>`
 );

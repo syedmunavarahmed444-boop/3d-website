@@ -106,23 +106,28 @@ def make_mat(name, color=(0.8, 0.8, 0.8), rough=0.55, metal=0.0, emit=0.0, img_p
 
 # Showroom Materials
 M_TURF = make_mat("ShowroomTurf", color=(0.20, 0.56, 0.12), rough=0.90, ph_folder="asphalt_02", uv_scale=(18.0, 24.0))
-M_WALL_CREAM = make_mat("ShowroomWall", color=(0.96, 0.95, 0.92), rough=0.78, ph_folder="plastered_wall", uv_scale=(3.5, 2.5))
-M_SHELF_WHITE = make_mat("ShelfLaminateWhite", color=(0.96, 0.96, 0.95), rough=0.40)
-M_SHELF_BACK = make_mat("ShelfRecessBack", color=(0.91, 0.92, 0.94), rough=0.62)
-M_ROYAL_BLUE = make_mat("RoyalBlueTrim", color=(0.07, 0.22, 0.72), rough=0.30, metal=0.22)
-M_NAVY_PANEL = make_mat("CounterNavyPanel", color=(0.05, 0.11, 0.30), rough=0.34, metal=0.28)
-M_WOOD_TEAK = make_mat("TeakHardwood", color=(0.58, 0.35, 0.18), rough=0.34, ph_folder="brown_planks_03", uv_scale=(2.2, 2.2))
-M_WOOD_MAHOGANY = make_mat("MahoganyBase", color=(0.34, 0.07, 0.08), rough=0.28, metal=0.05)
-M_WOOD_WILLOW = make_mat("EnglishWillow", color=(0.91, 0.80, 0.63), rough=0.38)
-M_GOLD = make_mat("MirrorGold", color=(0.98, 0.78, 0.25), rough=0.14, metal=0.96)
-M_SILVER = make_mat("ChromeSilver", color=(0.90, 0.92, 0.95), rough=0.16, metal=0.94)
+M_WALL_CREAM = make_mat("ShowroomWall", color=(0.90, 0.90, 0.88), rough=0.84, ph_folder="plastered_wall", uv_scale=(3.5, 2.5))
+M_SHELF_WHITE = make_mat("ShelfLaminateWhite", color=(0.86, 0.88, 0.91), rough=0.72)
+M_SHELF_BACK = make_mat("ShelfRecessBack", color=(0.66, 0.75, 0.88), rough=0.88)
+M_ROYAL_BLUE = make_mat("RoyalBlueTrim", color=(0.07, 0.22, 0.72), rough=0.34, metal=0.18)
+M_NAVY_PANEL = make_mat("CounterNavyPanel", color=(0.05, 0.11, 0.30), rough=0.36, metal=0.22)
+M_WOOD_TEAK = make_mat("TeakHardwood", color=(0.54, 0.32, 0.16), rough=0.36, ph_folder="brown_planks_03", uv_scale=(2.2, 2.2))
+M_WOOD_MAHOGANY = make_mat("MahoganyBase", color=(0.32, 0.06, 0.07), rough=0.30, metal=0.05)
+M_WOOD_WILLOW = make_mat("EnglishWillow", color=(0.80, 0.63, 0.42), rough=0.44)
+M_GOLD = make_mat("MirrorGold", color=(0.98, 0.73, 0.15), rough=0.17, metal=0.93)
+M_GOLD_WARM = make_mat("ChampionshipGold", color=(0.95, 0.64, 0.10), rough=0.20, metal=0.91)
+M_SILVER = make_mat("ChromeSilver", color=(0.88, 0.90, 0.94), rough=0.18, metal=0.92)
 M_BRONZE = make_mat("BronzeMedal", color=(0.80, 0.48, 0.22), rough=0.22, metal=0.88)
-M_RUBY = make_mat("MetallicRuby", color=(0.80, 0.05, 0.10), rough=0.18, metal=0.85)
-M_SAPPHIRE = make_mat("MetallicSapphire", color=(0.07, 0.22, 0.85), rough=0.18, metal=0.85)
-M_BLACK_GLOSS = make_mat("GlossBlack", color=(0.06, 0.06, 0.07), rough=0.24, metal=0.20)
-M_COUNTER_GLASS = make_mat("CounterGlass", color=(0.78, 0.92, 0.97), rough=0.05, metal=0.12, alpha=0.24)
-M_LED_WARM = make_mat("CeilingLED", color=(1.0, 0.97, 0.90), rough=0.12, emit=4.2)
-M_SACK_WOVEN = make_mat("WhiteWovenSack", color=(0.94, 0.95, 0.92), rough=0.72, ph_folder="concrete_layers", uv_scale=(4.0, 4.0))
+M_RUBY = make_mat("MetallicRuby", color=(0.82, 0.04, 0.09), rough=0.18, metal=0.85)
+M_SAPPHIRE = make_mat("MetallicSapphire", color=(0.06, 0.22, 0.86), rough=0.18, metal=0.85)
+M_BLACK_GLOSS = make_mat("GlossBlack", color=(0.06, 0.06, 0.07), rough=0.26, metal=0.18)
+M_COUNTER_GLASS = make_mat("CounterGlass", color=(0.78, 0.92, 0.97), rough=0.05, metal=0.12, alpha=0.22)
+M_LED_WARM = make_mat("CeilingLED", color=(1.0, 0.97, 0.90), rough=0.15, emit=3.2)
+M_SACK_WOVEN = make_mat("WhiteWovenSack", img_path=os.path.join(INT_TEX_DIR, "sack_wholesale.png"), rough=0.68)
+M_SHUTTLE_TUBE = make_mat("ShuttleTubeMat", img_path=os.path.join(INT_TEX_DIR, "shuttle_tube.png"), rough=0.38)
+M_BAT_M4_BACK = make_mat("BatM4BackScoop", img_path=os.path.join(INT_TEX_DIR, "bat_m4_back.png"), rough=0.40)
+M_FEATHER_WHITE = make_mat("FeatherWhite", color=(0.97, 0.97, 0.98), rough=0.55)
+M_VELVET_RED = make_mat("ShowcaseVelvet", color=(0.48, 0.04, 0.08), rough=0.90)
 M_CRICKET_LEATHER = make_mat("CricketBallLeather", color=(0.66, 0.04, 0.06), rough=0.26)
 M_TENNIS_YELLOW = make_mat("TennisBallOptic", color=(0.76, 0.95, 0.10), rough=0.85)
 
@@ -144,6 +149,9 @@ M_BOX_RLON = make_mat("BoxRlon", img_path=os.path.join(INT_TEX_DIR, "box_rlon.pn
 M_BOX_SSS = make_mat("BoxSss", img_path=os.path.join(INT_TEX_DIR, "box_sss.png"), rough=0.50)
 M_BOX_CARROM = make_mat("BoxCarrom", img_path=os.path.join(INT_TEX_DIR, "box_carrom.png"), rough=0.50)
 M_VOLLEYBALL = make_mat("VolleyballSkin", img_path=os.path.join(INT_TEX_DIR, "volleyball_tex.png"), rough=0.38)
+M_FOOTBALL_MATCH = make_mat("MatchFootballSkin", img_path=os.path.join(INT_TEX_DIR, "football_match_tex.png"), rough=0.32)
+M_HEMP_TWINE = make_mat("HempTwine", color=(0.62, 0.46, 0.26), rough=0.88)
+M_PAD_IVORY = make_mat("PadIvoryPU", color=(0.95, 0.94, 0.91), rough=0.45)
 M_STRINGS = make_mat("RacketStrings", img_path=os.path.join(INT_TEX_DIR, "racket_strings.png"), rough=0.35, alpha_tex=True)
 
 JERSEY_MATS = [
@@ -386,19 +394,28 @@ def make_ornate_trophy(idx):
     np.data.materials.append(M_GOLD)
     parts.append(np)
 
-    # Metallic turned stem + ornate Poly Haven goblet/vase bowl!
+    # Metallic turned stem(s) + rich 22k Championship Gold cup bowl (no dull grey silver!)
     stem_h = total_h * 0.30
-    bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=0.024, depth=stem_h, location=(0, 0, 0.105 + stem_h * 0.5))
-    st = bpy.context.active_object
-    st.data.materials.append(pillar_mat)
-    parts.append(st)
+    if idx == 2:
+        # Twin-column championship tower trophy!
+        for sgn in (-1, 1):
+            bpy.ops.mesh.primitive_cylinder_add(vertices=18, radius=0.016, depth=stem_h, location=(sgn * 0.036, 0, 0.105 + stem_h * 0.5))
+            st = bpy.context.active_object
+            st.data.materials.append(M_RUBY)
+            parts.append(st)
+    else:
+        bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=0.024, depth=stem_h, location=(0, 0, 0.105 + stem_h * 0.5))
+        st = bpy.context.active_object
+        st.data.materials.append(pillar_mat if idx != 3 else M_RUBY)
+        parts.append(st)
 
     cup_z = 0.105 + stem_h
     src_cup = TMPL_GOBLET if (idx % 2 == 0 and TMPL_GOBLET) else TMPL_VASE_CUP
+    cup_gold_mat = M_GOLD if idx % 2 == 0 else M_GOLD_WARM
     if src_cup:
         cup_copy = bpy.data.objects.new(f"CupPart_{idx}", src_cup.data.copy())
         cup_copy.data.materials.clear()
-        cup_copy.data.materials.append(M_GOLD if idx % 3 != 2 else M_SILVER)
+        cup_copy.data.materials.append(cup_gold_mat)
         cup_copy.location = (0, 0, cup_z - 0.01)
         cup_s = (total_h * 0.52) / 0.35
         cup_copy.scale = (cup_s * 0.92, cup_s * 0.92, cup_s)
@@ -461,13 +478,21 @@ def make_detailed_bat(brand_idx, grip_idx, is_scoop=False):
     blade.data.materials.append(M_WOOD_WILLOW)
     parts.append(blade)
 
-    # Raised sweet-spot spine on back (+Y)
-    bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=0.032, radius2=0.010, depth=0.50, location=(0, 0.020, 0.29))
-    sp = bpy.context.active_object
-    sp.scale = (0.85, 0.65, 1.0)
-    bpy.ops.object.transform_apply(scale=True)
-    sp.data.materials.append(M_BLACK_GLOSS if is_scoop else M_WOOD_WILLOW)
-    parts.append(sp)
+    # Raised sweet-spot spine OR dual-oval M4 Beast scoop back (+Y)
+    if is_scoop:
+        bpy.ops.mesh.primitive_plane_add(size=1.0, location=(0, 0.0185, 0.29), rotation=(-math.pi / 2, math.pi, 0))
+        bk = bpy.context.active_object
+        bk.scale = (0.102, 0.545, 1.0)
+        bpy.ops.object.transform_apply(scale=True)
+        bk.data.materials.append(M_BAT_M4_BACK)
+        parts.append(bk)
+    else:
+        bpy.ops.mesh.primitive_cone_add(vertices=4, radius1=0.032, radius2=0.010, depth=0.50, location=(0, 0.020, 0.29))
+        sp = bpy.context.active_object
+        sp.scale = (0.85, 0.65, 1.0)
+        bpy.ops.object.transform_apply(scale=True)
+        sp.data.materials.append(M_WOOD_WILLOW)
+        parts.append(sp)
 
     # Rubber toe guard
     bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, 0.014))
@@ -525,23 +550,33 @@ def make_strung_racket(frame_mat):
     hd.data.materials.append(frame_mat)
     parts.append(hd)
 
-    # Woven string mesh with red 'S' stencil
+    # Woven elliptical string mesh + T-joint throat + tapered shaft cone + white PU grip
     bpy.ops.mesh.primitive_plane_add(size=1.0, location=(0, 0, 0.50), rotation=(math.pi / 2, 0, 0))
     st = bpy.context.active_object
-    st.scale = (0.185, 0.255, 1.0)
+    st.scale = (0.195, 0.268, 1.0)
     bpy.ops.object.transform_apply(scale=True)
     st.data.materials.append(M_STRINGS)
     parts.append(st)
 
-    # Throat + slim graphite shaft + white PU grip
-    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.0042, depth=0.22, location=(0, 0, 0.255))
+    # Molded T-joint & tapered cap cone
+    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.006, radius2=0.018, depth=0.035, location=(0, 0, 0.365))
+    tj = bpy.context.active_object
+    tj.data.materials.append(frame_mat)
+    parts.append(tj)
+
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.0042, depth=0.20, location=(0, 0, 0.255))
     sh = bpy.context.active_object
     sh.data.materials.append(M_SILVER)
     parts.append(sh)
 
+    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.0135, radius2=0.005, depth=0.035, location=(0, 0, 0.168))
+    cn = bpy.context.active_object
+    cn.data.materials.append(frame_mat)
+    parts.append(cn)
+
     bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.0135, depth=0.155, location=(0, 0, 0.078))
     gr = bpy.context.active_object
-    gr.data.materials.append(M_SHELF_WHITE)
+    gr.data.materials.append(M_FEATHER_WHITE)
     parts.append(gr)
 
     bpy.ops.object.select_all(action="DESELECT")
@@ -578,7 +613,7 @@ def make_sublimated_jersey(j_idx):
     parts.append(front)
 
     for sgn in (-1, 1):
-        bpy.ops.mesh.primitive_cylinder_add(vertices=14, radius=0.068, depth=0.22, location=(sgn * 0.24, 0, -0.14), rotation=(0, math.radians(sgn * 58), 0))
+        bpy.ops.mesh.primitive_cylinder_add(vertices=14, radius=0.065, depth=0.21, location=(sgn * 0.235, 0, -0.15), rotation=(0, math.radians(sgn * -56), 0))
         sl = bpy.context.active_object
         sl.scale = (1.0, 0.45, 1.0)
         bpy.ops.object.transform_apply(scale=True)
@@ -619,9 +654,19 @@ def make_volleyball():
 
 TMPL_VOLLEY = make_volleyball()
 
+def make_match_football():
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=26, ring_count=18, radius=0.112, location=(0, 0, 0.112))
+    fb = bpy.context.active_object
+    fb.name = "Tmpl_MatchFootball"
+    bpy.ops.object.shade_smooth()
+    fb.data.materials.append(M_FOOTBALL_MATCH)
+    return link_tmpl(fb)
+
+TMPL_MATCH_FB = make_match_football()
+
 def make_pro_helmet(shell_mat):
     parts = []
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=22, ring_count=14, radius=0.125, location=(0, 0, 0.135))
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=22, ring_count=14, radius=0.125, location=(0, 0, 0.14))
     dm = bpy.context.active_object
     bpy.ops.object.shade_smooth()
     dm.scale = (0.94, 1.12, 0.94)
@@ -629,16 +674,22 @@ def make_pro_helmet(shell_mat):
     dm.data.materials.append(shell_mat)
     parts.append(dm)
 
-    bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=0.132, depth=0.014, location=(0, -0.065, 0.12), rotation=(math.radians(14), 0, 0))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=20, radius=0.135, depth=0.015, location=(0, -0.072, 0.125), rotation=(math.radians(15), 0, 0))
     pk = bpy.context.active_object
     pk.data.materials.append(shell_mat)
     parts.append(pk)
 
+    # Prominent steel faceguard grille + side ear bars facing -Y
     for g in range(4):
-        bpy.ops.mesh.primitive_torus_add(major_radius=0.116, minor_radius=0.0032, major_segments=18, minor_segments=6, location=(0, -0.032, 0.048 + g * 0.020))
+        bpy.ops.mesh.primitive_torus_add(major_radius=0.122, minor_radius=0.0048, major_segments=20, minor_segments=8, location=(0, -0.048, 0.045 + g * 0.022))
         br = bpy.context.active_object
         br.data.materials.append(M_SILVER)
         parts.append(br)
+    for sgn in (-1, 1):
+        bpy.ops.mesh.primitive_cylinder_add(vertices=10, radius=0.0048, depth=0.085, location=(sgn * 0.088, -0.095, 0.075))
+        vb = bpy.context.active_object
+        vb.data.materials.append(M_SILVER)
+        parts.append(vb)
 
     bpy.ops.object.select_all(action="DESELECT")
     for p in parts:
@@ -650,6 +701,144 @@ def make_pro_helmet(shell_mat):
     return link_tmpl(hm)
 
 TMPL_HELMETS = [make_pro_helmet(M_NAVY_PANEL), make_pro_helmet(M_ROYAL_BLUE)]
+
+# 3D Feathered Shuttlecock Template (rounded cork nose + red trim + flared white feather skirt)
+def make_shuttlecock():
+    parts = []
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=16, ring_count=10, radius=0.014, location=(0, 0, 0.014))
+    ck = bpy.context.active_object
+    ck.data.materials.append(M_FEATHER_WHITE)
+    parts.append(ck)
+
+    bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.015, depth=0.006, location=(0, 0, 0.024))
+    rb = bpy.context.active_object
+    rb.data.materials.append(M_GRIP_RED)
+    parts.append(rb)
+
+    bpy.ops.mesh.primitive_cone_add(vertices=16, radius1=0.014, radius2=0.034, depth=0.062, location=(0, 0, 0.056))
+    sk = bpy.context.active_object
+    sk.data.materials.append(M_FEATHER_WHITE)
+    parts.append(sk)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    sc = bpy.context.view_layer.objects.active
+    sc.name = "Tmpl_Shuttlecock"
+    return link_tmpl(sc)
+
+TMPL_SHUTTLECOCK = make_shuttlecock()
+
+# 3D Sculpted Cricket Batting Glove Pair Template (sausage finger rolls + thumb + wrist strap)
+def make_batting_glove(accent_mat):
+    parts = []
+    # Wrist cuff
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, 0.04))
+    cf = bpy.context.active_object
+    cf.scale = (0.105, 0.055, 0.075)
+    bpy.ops.object.transform_apply(scale=True)
+    cf.data.materials.append(accent_mat)
+    parts.append(cf)
+
+    # Padded back-of-hand bolster
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, 0.115))
+    bh = bpy.context.active_object
+    bh.scale = (0.115, 0.058, 0.095)
+    bpy.ops.object.transform_apply(scale=True)
+    bv = bh.modifiers.new("Gbv", "BEVEL")
+    bv.width = 0.012
+    bv.segments = 2
+    bpy.ops.object.modifier_apply(modifier=bv.name)
+    bh.data.materials.append(M_FEATHER_WHITE)
+    parts.append(bh)
+
+    # 4 Sausage finger rolls + angled thumb roll
+    for fi in range(4):
+        fx = -0.040 + fi * 0.027
+        fh = 0.095 if fi in (1, 2) else 0.082
+        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.013, depth=fh, location=(fx, 0, 0.165 + fh * 0.45))
+        fg = bpy.context.active_object
+        fg.data.materials.append(M_FEATHER_WHITE if fi != 0 else accent_mat)
+        parts.append(fg)
+
+    bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.015, depth=0.072, location=(-0.068, -0.008, 0.135), rotation=(0, math.radians(-28), 0))
+    th = bpy.context.active_object
+    th.data.materials.append(M_FEATHER_WHITE)
+    parts.append(th)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    gl = bpy.context.view_layer.objects.active
+    gl.name = f"Tmpl_BattingGlove_{accent_mat.name}"
+    return link_tmpl(gl)
+
+TMPL_GLOVES = [make_batting_glove(M_GRIP_RED), make_batting_glove(M_ROYAL_BLUE)]
+
+# Solid Full-Width 7-Cane Pro Cricket Batting Leg Pad (zero stilt gaps!)
+def make_pro_batting_pad(trim_mat):
+    parts = []
+    # Solid curved full-width backing shell from ankle to thigh so there is NEVER a hollow gap
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0.008, 0.27))
+    shell = bpy.context.active_object
+    shell.scale = (0.205, 0.065, 0.50)
+    bpy.ops.object.transform_apply(scale=True)
+    bv = shell.modifiers.new("PadBv", "BEVEL")
+    bv.width = 0.018
+    bv.segments = 3
+    bpy.ops.object.modifier_apply(modifier=bv.name)
+    shell.data.materials.append(M_PAD_IVORY)
+    parts.append(shell)
+
+    # 7 Raised front cane ribs + dark navy groove dividers so every rib reads crisply!
+    for ci in range(7):
+        cx = -0.078 + ci * 0.026
+        bpy.ops.mesh.primitive_cylinder_add(vertices=12, radius=0.0135, depth=0.33, location=(cx, -0.022, 0.195))
+        cn = bpy.context.active_object
+        cn.data.materials.append(trim_mat if ci in (0, 6) else M_PAD_IVORY)
+        parts.append(cn)
+        if ci < 6:
+            bpy.ops.mesh.primitive_cylinder_add(vertices=8, radius=0.0028, depth=0.32, location=(cx + 0.013, -0.031, 0.195))
+            gv = bpy.context.active_object
+            gv.data.materials.append(M_NAVY_PANEL)
+            parts.append(gv)
+
+    # 3 Sculpted horizontal knee-roll bolsters across the upper front
+    for ki in range(3):
+        bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.024, depth=0.205, location=(0, -0.020, 0.385 + ki * 0.044), rotation=(0, math.pi / 2, 0))
+        kr = bpy.context.active_object
+        kr.data.materials.append(trim_mat if ki == 1 else M_PAD_IVORY)
+        parts.append(kr)
+
+    # Rounded top hat arch + cushioned instep foot arch
+    bpy.ops.mesh.primitive_cylinder_add(vertices=18, radius=0.098, depth=0.055, location=(0, 0.005, 0.515), rotation=(math.pi / 2, 0, 0))
+    ta = bpy.context.active_object
+    ta.scale = (1.0, 1.0, 0.65)
+    bpy.ops.object.transform_apply(scale=True)
+    ta.data.materials.append(M_PAD_IVORY)
+    parts.append(ta)
+
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, -0.018, 0.024))
+    fa = bpy.context.active_object
+    fa.scale = (0.205, 0.088, 0.046)
+    bpy.ops.object.transform_apply(scale=True)
+    fa.data.materials.append(trim_mat)
+    parts.append(fa)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    pd = bpy.context.view_layer.objects.active
+    pd.name = f"Tmpl_ProPad_{trim_mat.name}"
+    return link_tmpl(pd)
+
+TMPL_PRO_PADS = [make_pro_batting_pad(M_ROYAL_BLUE), make_pro_batting_pad(M_GRIP_RED)]
 
 def make_labeled_box(name, sx, sy, sz, body_mat, front_mat):
     parts = []
@@ -771,18 +960,23 @@ add_box("CounterGlassTop", *counter_world(0, 0.855, 0), 0.48, 0.012, 1.12, M_COU
 add_box("CounterGlassFront", *counter_world(0.295, 0.77, 0), 0.012, 0.14, 1.18, M_COUNTER_GLASS, ry=COUNTER_YAW)
 add_box("CounterInnerLED", *counter_world(0.22, 0.825, 0), 0.02, 0.012, 1.10, M_LED_WARM, ry=COUNTER_YAW)
 
-# Crimson cricket balls & gold medals displayed INSIDE the glass counter showcase!
-for s_i in range(5):
-    lz_i = -0.42 + s_i * 0.21
+# Velvet trays packed with crimson cricket balls, neon bat grips & gold medals INSIDE the glass counter showcase!
+add_box("CounterVelvetTrayA", *counter_world(0.08, 0.705, -0.26), 0.34, 0.016, 0.48, M_VELVET_RED, ry=COUNTER_YAW)
+add_box("CounterVelvetTrayB", *counter_world(0.08, 0.705, 0.28), 0.34, 0.016, 0.48, M_NAVY_PANEL, ry=COUNTER_YAW)
+for s_i in range(8):
+    row = s_i // 4
+    col = s_i % 4
     if TMPL_CRICKET_BALL:
-        instance_tmpl(TMPL_CRICKET_BALL, f"ShowcaseCricketBall_{s_i}", *counter_world(0.10, 0.705, lz_i), ry=s_i * 35)
-    add_cyl(f"ShowcaseMedal_{s_i}", *counter_world(-0.08, 0.71, lz_i), 0.035, 0.008, M_GOLD if s_i % 2 == 0 else M_SILVER, axis="Y")
+        instance_tmpl(TMPL_CRICKET_BALL, f"ShowcaseCricketBall_{s_i}", *counter_world(0.02 + row * 0.11, 0.715, -0.42 + col * 0.105), ry=s_i * 35)
+for g_i in range(6):
+    add_cyl(f"ShowcaseGrip_{g_i}", *counter_world(0.12, 0.725, 0.08 + g_i * 0.075), 0.014, 0.22, GRIP_MATS[g_i % len(GRIP_MATS)], axis="X", ry=COUNTER_YAW)
+    add_cyl(f"ShowcaseMedal_{g_i}", *counter_world(-0.04, 0.718, 0.08 + g_i * 0.075), 0.032, 0.007, M_GOLD if g_i % 2 == 0 else M_SILVER, axis="Y")
 
 # Shopkeeper's White Monobloc Chair tucked cleanly behind the angled corner desk!
 if TMPL_CHAIR:
     instance_tmpl(TMPL_CHAIR, "ShopkeeperChair", -1.48, 0.0, 0.46, ry=125)
 
-# Props on TOP of the Counter: Demo QR Stand, Photoscanned Clipboard, Ledger Binder, Knocking Mallet & Grips
+# Props on TOP of the Counter: Demo QR Stand positioned on inner-right corner (100% unobstructed by UI card!)
 def add_counter_qr():
     parts = []
     bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0.01, 0.125))
@@ -804,18 +998,18 @@ def add_counter_qr():
     bpy.ops.object.join()
     st = bpy.context.view_layer.objects.active
     st.name = "CounterQRStandObj"
-    st.location = t2b_loc(*counter_world(0.16, 0.87, 0.42))
-    st.rotation_euler = t2b_rot(-8, 54, 0)
+    st.location = t2b_loc(*counter_world(0.16, 0.87, -0.38))
+    st.rotation_euler = t2b_rot(-6, 54, 0)
     return link_int(st)
 
 add_counter_qr()
 if TMPL_CLIPBOARD:
-    instance_tmpl(TMPL_CLIPBOARD, "CounterClipboard", *counter_world(0.02, 0.872, 0.05), ry=45)
+    instance_tmpl(TMPL_CLIPBOARD, "CounterClipboard", *counter_world(0.02, 0.872, 0.06), ry=45)
 if TMPL_BINDER:
-    instance_tmpl(TMPL_BINDER, "CounterLedgerBinder", *counter_world(-0.12, 0.872, -0.26), ry=22)
+    instance_tmpl(TMPL_BINDER, "CounterLedgerBinder", *counter_world(-0.12, 0.872, 0.34), ry=22)
 
-add_cyl("CounterMalletHead", *counter_world(0.12, 0.91, -0.44), 0.038, 0.12, M_WOOD_WILLOW, axis="Z", ry=15)
-add_cyl("CounterMalletStick", *counter_world(0.02, 0.89, -0.48), 0.012, 0.21, M_WOOD_TEAK, axis="X", ry=-25)
+add_cyl("CounterMalletHead", *counter_world(0.08, 0.91, -0.14), 0.038, 0.12, M_WOOD_WILLOW, axis="Z", ry=15)
+add_cyl("CounterMalletStick", *counter_world(-0.02, 0.89, -0.18), 0.012, 0.21, M_WOOD_TEAK, axis="X", ry=-25)
 
 # Hanging Tournament Medals on Ribbons inside Front-Left Glass Window (z = 0.92)
 add_cyl("WindowMedalRod", -1.16, 2.28, 0.92, 0.011, 0.78, M_SILVER, axis="X")
@@ -859,7 +1053,10 @@ add_box("BackFloorBatStand", 0.10, 0.035, -4.06, 1.92, 0.07, 0.30, M_NAVY_PANEL,
 add_box("BackFloorBatGoldRail", 0.10, 0.56, -3.98, 1.92, 0.024, 0.028, M_GOLD)
 for sbi in range(11):
     sbx = -0.78 + sbi * 0.175
-    instance_tmpl(TMPL_M4_SCOOPS[sbi % 5], f"BackM4ScoopBat_{sbi}", sbx, 0.07, -4.06, rx=-7.0)
+    # Turn 4 bats to show off the signature M4 Beast dual-oval back scoops!
+    scoop_yaw = 165.0 if sbi in (2, 5, 8) else 0.0
+    scoop_pitch = 7.0 if scoop_yaw > 90 else -7.0
+    instance_tmpl(TMPL_M4_SCOOPS[sbi % 5], f"BackM4ScoopBat_{sbi}", sbx, 0.07, -4.06, rx=scoop_pitch, ry=scoop_yaw)
 
 # Back-Left Cubbies (Plaques, Trophies & Photoscanned Cardboard Cartons)
 for sy in [0.92, 1.66]:
@@ -907,13 +1104,16 @@ for bi in range(9):
     if bi % 2 == 0:
         instance_tmpl(TMPL_BOX_FLASH, f"LeftTopBoxStack_{bi}", -1.51, 2.65, bz, ry=87)
 
-# Upper Cubby (y = 1.58): Sculpted Batting Leg Pads + Pro Steel-Grill Helmets
-if TMPL_PAD:
-    for pi in range(5):
-        instance_tmpl(TMPL_PAD, f"LeftPad_{pi}", -1.48, 1.58, -1.10 - pi * 0.36, ry=90 + (pi % 2) * 8)
+# Upper Cubby (y = 1.58): Contoured 3-Bolster Batting Pads + 4 Pairs of 3D Batting Gloves + Pro Steel-Grill Helmets!
+for pi in range(4):
+    instance_tmpl(TMPL_PRO_PADS[pi % 2], f"LeftProPad_{pi}", -1.46, 1.58, -1.06 - pi * 0.26, ry=90 + (pi % 2) * 8)
+
+for gi in range(4):
+    gz = -2.14 - gi * 0.19
+    instance_tmpl(TMPL_GLOVES[gi % 2], f"LeftBattingGlove_{gi}", -1.42, 1.58, gz, rx=-12, ry=85)
 
 for hi in range(4):
-    instance_tmpl(TMPL_HELMETS[hi % 2], f"LeftProHelmet_{hi}", -1.46, 1.58, -2.96 - hi * 0.29, ry=90)
+    instance_tmpl(TMPL_HELMETS[hi % 2], f"LeftProHelmet_{hi}", -1.44, 1.58, -2.98 - hi * 0.29, ry=90)
 
 # Mid Cubby (y = 0.84): Sculpted Turf Sneakers + Lime R-LON Wholesale Packs
 if TMPL_SHOE:
@@ -925,28 +1125,80 @@ for rli in range(4):
     instance_tmpl(TMPL_BOX_RLON, f"LeftRlonA_{rli}", -1.48, 0.84, rlz, ry=90)
     instance_tmpl(TMPL_BOX_RLON, f"LeftRlonB_{rli}", -1.50, 1.01, rlz, ry=88)
 
-# Floor Wholesale Zone: Photoscanned Corrugated Cartons, Plastic Ball Crate & Plump White Woven Sacks!
+# Floor Wholesale Zone: Corrugated Cartons, Ball Crate & Crisp Printed White Woven Wholesale Sacks in Open View!
 if TMPL_CARDBOARD:
     for wci in range(4):
         wcz = -2.55 - wci * 0.40
-        instance_tmpl(TMPL_CARDBOARD, f"WholesaleCartonLo_{wci}", -1.48, 0.01, wcz, ry=88 + (wci % 3 - 1) * 5)
+        instance_tmpl(TMPL_CARDBOARD, f"WholesaleCartonLo_{wci}", -1.46, 0.01, wcz, ry=88 + (wci % 3 - 1) * 5)
         if wci < 3:
-            instance_tmpl(TMPL_CARDBOARD, f"WholesaleCartonHi_{wci}", -1.50, 0.34, wcz, ry=92, scale=(0.86, 0.86, 0.86))
+            instance_tmpl(TMPL_CARDBOARD, f"WholesaleCartonHi_{wci}", -1.48, 0.34, wcz, ry=92, scale=(0.86, 0.86, 0.86))
 
 if TMPL_CRATE:
-    instance_tmpl(TMPL_CRATE, "TennisBallCrate", -1.42, 0.01, -2.10, ry=90)
-    for tbi in range(12):
-        bx_off = -1.48 + (tbi % 3) * 0.065
-        bz_off = -2.20 + (tbi // 3) * 0.068
-        bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.033, location=t2b_loc(bx_off, 0.14 + (tbi % 2) * 0.04, bz_off))
+    instance_tmpl(TMPL_CRATE, "TennisBallCrate", -0.96, 0.01, -2.18, ry=78)
+    for tbi in range(14):
+        bx_off = -1.04 + (tbi % 4) * 0.055
+        bz_off = -2.28 + (tbi // 4) * 0.065
+        bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.034, location=t2b_loc(bx_off, 0.14 + (tbi % 2) * 0.04, bz_off))
         tb = bpy.context.active_object
         tb.name = f"CrateTennisBall_{tbi}"
         tb.data.materials.append(M_TENNIS_YELLOW if tbi % 3 != 0 else M_CRICKET_LEATHER)
         link_int(tb)
 
-if TMPL_SACK:
-    for ski in range(3):
-        instance_tmpl(TMPL_SACK, f"WholesaleSack_{ski}", -1.36, 0.01, -1.08 - ski * 0.36, rx=75, ry=90 + (ski - 1) * 10)
+# 3 Soft, Bulging, Tied-Neck Woven Gunny Wholesale Sacks (organic pillow silhouette + crumpled cloth top!)
+for ski in range(3):
+    skz = -2.68 - ski * 0.42
+    parts_s = []
+    # Plump organic bulging sack body (deformed smooth sphere, NOT a boxy jerrycan!)
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=20, ring_count=14, radius=0.22, location=(0, 0, 0.21))
+    sb = bpy.context.active_object
+    bpy.ops.object.shade_smooth()
+    sb.scale = (0.86, 0.68, 1.08)
+    bpy.ops.object.transform_apply(scale=True)
+    # Flatten bottom slightly so sack sits heavily on the turf
+    for v in sb.data.vertices:
+        if v.co.z < 0.05:
+            v.co.z = max(0.0, v.co.z * 0.35)
+            v.co.x *= 1.08
+            v.co.y *= 1.08
+        elif v.co.z > 0.34:
+            pinch = max(0.32, 1.0 - (v.co.z - 0.34) * 4.2)
+            v.co.x *= pinch
+            v.co.y *= pinch
+    sb.data.update()
+    sb.data.materials.append(M_SACK_WOVEN)
+    parts_s.append(sb)
+
+    # Curved printed woven front label patch
+    bpy.ops.mesh.primitive_plane_add(size=1.0, location=(0, -0.152, 0.21), rotation=(math.pi / 2, 0, 0))
+    slb = bpy.context.active_object
+    slb.scale = (0.24, 0.26, 1.0)
+    bpy.ops.object.transform_apply(scale=True)
+    slb.data.materials.append(M_SACK_WOVEN)
+    parts_s.append(slb)
+
+    # Cinched hemp twine cord + flared crumpled cloth ruffle fan at top (zero plastic cap!)
+    bpy.ops.mesh.primitive_cylinder_add(vertices=14, radius=0.048, depth=0.022, location=(0, 0, 0.425))
+    tw = bpy.context.active_object
+    tw.data.materials.append(M_HEMP_TWINE)
+    parts_s.append(tw)
+
+    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.042, radius2=0.105, depth=0.085, location=(0, 0, 0.475))
+    rf = bpy.context.active_object
+    rf.scale = (1.15, 0.72, 1.0)
+    bpy.ops.object.transform_apply(scale=True)
+    rf.data.materials.append(M_PAD_IVORY)
+    parts_s.append(rf)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts_s:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts_s[0]
+    bpy.ops.object.join()
+    sack_obj = bpy.context.view_layer.objects.active
+    sack_obj.name = f"PrintedWholesaleSack_{ski}"
+    sack_obj.location = t2b_loc(-1.02, 0.0, skz)
+    sack_obj.rotation_euler = t2b_rot((ski - 1) * 3, 82 + (ski - 1) * 11, 0)
+    link_int(sack_obj)
 
 # ==============================================================================
 # 9. RIGHT WALL: CROWN TROPHIES, SLANTED BAT RACK, STRUNG RACKETS, PHOTOSCANNED FOOTBALLS & SUBLIMATED JERSEYS
@@ -964,14 +1216,20 @@ for rbi in range(10):
     bt = TMPL_PRO_BATS[rbi % 6] if rbi < 5 else TMPL_M4_SCOOPS[rbi % 5]
     instance_tmpl(bt, f"RightSlantedBat_{rbi}", 1.60, 0.08, rbz, ry=-90, rz=10)
 
-# B) Upper-Right Strung Badminton Rackets + Shuttlecock Tubes
+# B) Upper-Right Strung Badminton Rackets + Printed Mavis Shuttle Tubes + 10 Real 3D Feathered Shuttlecocks!
 add_box("RightBadmintonShelf", 1.68, 1.16, -0.32, 0.42, 0.035, 1.96, M_SHELF_WHITE)
 add_box("RightBadmintonTrim", 1.47, 1.16, -0.32, 0.022, 0.042, 1.96, M_ROYAL_BLUE)
 for rki in range(7):
-    instance_tmpl(TMPL_RACKETS[rki % 4], f"RightStrungRacket_{rki}", 1.64, 1.50, 0.52 - rki * 0.24, ry=-90)
+    instance_tmpl(TMPL_RACKETS[rki % 4], f"RightStrungRacket_{rki}", 1.66, 1.54, 0.52 - rki * 0.24, ry=-90)
 
-for sti in range(8):
-    add_cyl(f"ShuttleTube_{sti}", 1.62, 1.34, 0.50 - sti * 0.21, 0.033, 0.32, M_GOLD if sti % 2 == 0 else M_GRIP_LIME, axis="Y")
+for sti in range(7):
+    stz = 0.48 - sti * 0.23
+    add_cyl(f"ShuttleTube_{sti}", 1.72, 1.34, stz, 0.031, 0.31, M_SHUTTLE_TUBE, axis="Y", ry=-90)
+    add_cyl(f"ShuttleCap_{sti}", 1.72, 1.50, stz, 0.0325, 0.018, M_FEATHER_WHITE, axis="Y")
+
+for sci in range(10):
+    scz = 0.52 - sci * 0.165
+    instance_tmpl(TMPL_SHUTTLECOCK, f"FeatheredShuttle_{sci}", 1.56, 1.18, scz, rx=(sci % 2) * 8)
 
 # C) Mid-Right Photoscanned Leather Footballs & 18-Panel Volleyballs + Turf Sneakers
 for bsy in [0.76, 1.52]:
@@ -980,9 +1238,8 @@ for bsy in [0.76, 1.52]:
 
 for bli in range(5):
     blz = -1.52 - bli * 0.30
-    if TMPL_FOOTBALL:
-        instance_tmpl(TMPL_FOOTBALL, f"RightLeatherFootball_{bli}", 1.65, 1.53, blz, ry=bli * 42)
-    instance_tmpl(TMPL_VOLLEY if bli % 2 == 0 else TMPL_FOOTBALL, f"RightLowerBall_{bli}", 1.65, 0.77, blz, ry=-35 * bli)
+    instance_tmpl(TMPL_MATCH_FB, f"RightLeatherFootball_{bli}", 1.65, 1.53, blz, rx=bli * 28, ry=35 + bli * 54)
+    instance_tmpl(TMPL_VOLLEY if bli % 2 == 0 else TMPL_MATCH_FB, f"RightLowerBall_{bli}", 1.65, 0.77, blz, rx=18 * bli, ry=-42 * bli)
 
 add_box("RightShoeRiser", 1.66, 0.14, -2.14, 0.40, 0.26, 1.48, M_NAVY_PANEL, bevel=0.006)
 if TMPL_SHOE:
@@ -1047,6 +1304,4 @@ def snap_cpu(name, tx, ty, tz, lx, ly, lz):
     scene.render.filepath = os.path.join(PREVIEW_DIR, f"{name}.png")
     bpy.ops.render.render(write_still=True)
 
-snap_cpu("interior_v2_straight", 0.08, 1.52, 0.65, 0.08, 1.45, -4.40)
-snap_cpu("interior_v2_counter_inward", 0.56, 1.54, 1.85, -0.68, 1.02, -0.85)
 print("INTERIOR_V2_DONE")

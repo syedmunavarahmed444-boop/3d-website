@@ -37,53 +37,53 @@ function renderSign(name, width, height, html) {
   console.log(`Printed ${name}.png (${width}x${height})`);
 }
 
-// 1. Main Glowing Orange-Gold SULTAN SPORTS KADAPA Signboard
+// 1. Main High-Contrast Orange-Crimson SULTAN SPORTS KADAPA Signboard (crisp in bright sunlight)
 renderSign(
   'sultan_sign_main',
   2048,
   512,
-  `<div style="width:100%;height:100%;background:linear-gradient(135deg,#e65100 0%,#f57c00 45%,#ff9800 100%);border:14px solid #7f1d1d;display:flex;align-items:center;padding:18px 28px;gap:26px;position:relative;">
-    <img src="${EMBLEM_DATA}" style="height:360px;width:360px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.45));flex-shrink:0;" />
+  `<div style="width:100%;height:100%;background:linear-gradient(135deg,#b91c1c 0%,#d84315 48%,#e65100 100%);border:14px solid #450a0a;display:flex;align-items:center;padding:18px 28px;gap:26px;position:relative;">
+    <img src="${EMBLEM_DATA}" style="height:360px;width:360px;object-fit:contain;filter:drop-shadow(0 8px 18px rgba(0,0,0,0.65));flex-shrink:0;" />
     <div style="flex:1;display:flex;flex-direction:column;justify-content:center;gap:10px;">
       <div style="display:flex;align-items:center;justify-content:space-between;">
-        <span style="background:#0b2c22;color:#ffd54f;padding:6px 18px;border-radius:8px;font-weight:800;font-size:26px;letter-spacing:1.5px;border:2px solid #ffd54f;">RETAIL &amp; WHOLESALE SHOWROOM</span>
-        <span style="background:#fff;color:#b71c1c;padding:6px 18px;border-radius:8px;font-weight:900;font-size:26px;">91107 44845 · 63039 74896</span>
+        <span style="background:#081f18;color:#fde047;padding:6px 18px;border-radius:8px;font-weight:900;font-size:26px;letter-spacing:1.5px;border:2px solid #fde047;">RETAIL &amp; WHOLESALE SHOWROOM</span>
+        <span style="background:#0f172a;color:#fde047;padding:6px 18px;border-radius:8px;font-weight:900;font-size:26px;border:2px solid #fff;">91107 44845 · 63039 74896</span>
       </div>
-      <div style="font-size:124px;font-weight:900;line-height:0.95;color:#ffeb3b;letter-spacing:2px;-webkit-text-stroke:5px #8e0000;text-shadow:0 8px 0 #5f0000,0 14px 24px rgba(0,0,0,0.45);">
+      <div style="font-size:126px;font-weight:900;line-height:0.95;color:#fde047;letter-spacing:2px;-webkit-text-stroke:6px #2a0404;text-shadow:0 9px 0 #1f0202,0 14px 24px rgba(0,0,0,0.65);">
         SULTAN SPORTS
       </div>
       <div style="display:flex;align-items:center;gap:18px;">
-        <span style="background:#0d47a1;color:#fff;padding:10px 24px;border-radius:10px;font-size:34px;font-weight:900;letter-spacing:2px;">KADAPA · APSARA CIRCLE</span>
-        <span style="font-size:32px;font-weight:800;color:#fff;text-shadow:0 3px 6px rgba(0,0,0,0.5);">A Complete Sports Showroom · Bat Repairs &amp; Custom Kits</span>
+        <span style="background:#0f172a;color:#fde047;border:2px solid #fde047;padding:10px 24px;border-radius:10px;font-size:34px;font-weight:900;letter-spacing:2px;">KADAPA · APSARA CIRCLE</span>
+        <span style="font-size:31px;font-weight:900;color:#ffffff;text-shadow:0 3px 8px rgba(0,0,0,0.85);">Complete Sports Showroom · Willow Bats &amp; Custom Kits</span>
       </div>
     </div>
-    <div style="width:290px;height:410px;background:#0d47a1;border:6px solid #ffd54f;border-radius:14px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;text-align:center;flex-shrink:0;">
-      <div style="font-size:24px;font-weight:800;color:#ffd54f;border-bottom:2px solid rgba(255,213,79,0.4);padding-bottom:8px;">SPECIALIST IN</div>
+    <div style="width:290px;height:410px;background:#091540;border:6px solid #fde047;border-radius:14px;padding:18px;display:flex;flex-direction:column;justify-content:space-between;color:#fff;text-align:center;flex-shrink:0;">
+      <div style="font-size:24px;font-weight:800;color:#fde047;border-bottom:2px solid rgba(255,213,79,0.4);padding-bottom:8px;">SPECIALIST IN</div>
       <div style="font-size:34px;font-weight:900;line-height:1.15;">WILLOW BATS &amp; REPAIRS</div>
       <div style="font-size:22px;font-weight:700;color:#e3f2fd;">Cricket · Badminton<br>Football · Trophies<br>Team Jerseys</div>
-      <div style="background:#ffd54f;color:#0b2c22;font-weight:900;font-size:24px;padding:8px;border-radius:8px;">6 AM – 10 PM</div>
+      <div style="background:#fde047;color:#081f18;font-weight:900;font-size:24px;padding:8px;border-radius:8px;">6 AM – 10 PM</div>
     </div>
   </div>`
 );
 
-// 2. Doorway Overhead Signboard
+// 2. Doorway Overhead Signboard (High-contrast readable fascia)
 renderSign(
   'sultan_sign_door',
   1024,
   512,
-  `<div style="width:100%;height:100%;background:linear-gradient(180deg,#ff8f00 0%,#ef6c00 100%);border:12px solid #0b2c22;display:flex;flex-direction:column;justify-content:space-between;padding:24px 32px;color:#fff;">
+  `<div style="width:100%;height:100%;background:linear-gradient(180deg,#c2410c 0%,#9a3412 100%);border:12px solid #081f18;display:flex;flex-direction:column;justify-content:space-between;padding:24px 32px;color:#fff;">
     <div style="display:flex;align-items:center;gap:20px;">
       <img src="${EMBLEM_DATA}" style="width:140px;height:140px;object-fit:contain;" />
       <div>
-        <div style="font-size:68px;font-weight:900;color:#ffeb3b;-webkit-text-stroke:3px #7f0000;line-height:1;">SULTAN SPORTS</div>
-        <div style="font-size:28px;font-weight:800;color:#fff;margin-top:6px;">WHOLESALE PRICES · KADAPA</div>
+        <div style="font-size:68px;font-weight:900;color:#fde047;-webkit-text-stroke:4px #2a0404;line-height:1;text-shadow:0 5px 0 #1f0202;">SULTAN SPORTS</div>
+        <div style="font-size:28px;font-weight:900;color:#fff;margin-top:6px;text-shadow:0 2px 6px rgba(0,0,0,0.7);">WHOLESALE PRICES · KADAPA</div>
       </div>
     </div>
-    <div style="background:#0b2c22;border:3px solid #ffd54f;border-radius:12px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;font-size:28px;font-weight:800;color:#ffd54f;">
+    <div style="background:#081f18;border:3px solid #fde047;border-radius:12px;padding:16px 22px;display:flex;justify-content:space-between;align-items:center;font-size:28px;font-weight:800;color:#fde047;">
       <span>CRICKET · BADMINTON · FOOTBALL</span>
       <span>ENTRANCE ↓</span>
     </div>
-    <div style="background:#fff;color:#0d47a1;border-radius:8px;padding:10px 18px;font-size:26px;font-weight:900;text-align:center;">
+    <div style="background:#0f172a;color:#fde047;border:2px solid #fff;border-radius:8px;padding:10px 18px;font-size:26px;font-weight:900;text-align:center;">
       Near Apsara Theatre · Call 91107 44845 / 63039 74896
     </div>
   </div>`

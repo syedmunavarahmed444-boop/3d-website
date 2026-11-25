@@ -83,7 +83,6 @@ export class ScrollStoryEngine {
   }
 
   getState(p = this.progress) {
-    // 1. Active chapter index
     let chapterIdx = 0;
     for (let i = 0; i < CHAPTERS.length; i++) {
       const [start, end] = CHAPTERS[i].range;
@@ -96,7 +95,6 @@ export class ScrollStoryEngine {
     const ch = CHAPTERS[chapterIdx];
     const [twStart, twEnd] = ch.textWindow;
 
-    // Text fades in at twStart, holds full opacity, fades out before camera travels
     let textOpacity = 0;
     const fadePad = 0.014;
     if (p >= twStart && p <= twEnd) {
@@ -106,9 +104,9 @@ export class ScrollStoryEngine {
       textOpacity = Math.min(fadeIn, fadeOut);
     }
 
-    // 2. Camera interpolation: hold steady inside textWindow, travel between chapters
     let camPos = ch.camera.pos;
     let camTarget = ch.camera.target;
+    let mascotState = ch.mascot;
 
     if (chapterIdx < CHAPTERS.length - 1) {
       const next = CHAPTERS[chapterIdx + 1];
@@ -121,7 +119,7 @@ export class ScrollStoryEngine {
       }
     }
 
-    // Guided showroom pan across all 7 real product racks inside Chapter 3 (20%..42%)
+    // Guided showroom pan across all 7 product racks inside Chapter 3 (with per-rack mascot staging)
     let activeProductIdx = 0;
     if (chapterIdx === 2) {
       const [tw0, tw1] = ch.textWindow;
@@ -132,8 +130,11 @@ export class ScrollStoryEngine {
       const currProd = PRODUCTS[activeProductIdx];
       const nextProd = PRODUCTS[Math.min(PRODUCTS.length - 1, activeProductIdx + 1)];
       const segFrac = scaled - activeProductIdx;
-      // Hold steady on each rack for the first 68% of its slice, then glide smoothly to the next rack
       const blendT = smoothstep((segFrac - 0.68) / 0.32);
+
+      if (currProd?.mascot) {
+        mascotState = currProd.mascot;
+      }
 
       if (currProd?.focusCam && nextProd?.focusCam && p <= tw1) {
         camPos = lerpVec3(currProd.focusCam.pos, nextProd.focusCam.pos, blendT);
@@ -147,13 +148,14 @@ export class ScrollStoryEngine {
       }
     }
 
-    // 3. Shutter lift directly tied to scroll (9%..20%), reverses cleanly when scrolling up
-    const shutterOpen = smoothstep((p - 0.08) / 0.11);
+    // Shutter lifts early (4.5%..12.5%) so by Shutter chapter midpoint (14.5%) it is 100% open!
+    const shutterOpen = smoothstep((p - 0.045) / 0.08);
 
     return {
       progress: p,
       chapterIdx,
       chapter: ch,
+      mascot: mascotState,
       textOpacity,
       camPos,
       camTarget,

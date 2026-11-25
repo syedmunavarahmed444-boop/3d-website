@@ -10,11 +10,66 @@ function lerpAngle(current, target, t) {
   return current + diff * t;
 }
 
+function makeRadialShadowTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 128;
+  const ctx = c.getContext('2d');
+  const g = ctx.createRadialGradient(64, 64, 6, 64, 64, 62);
+  g.addColorStop(0, 'rgba(4, 14, 10, 0.58)');
+  g.addColorStop(0.55, 'rgba(4, 14, 10, 0.24)');
+  g.addColorStop(1, 'rgba(4, 14, 10, 0.0)');
+  ctx.fillStyle = g;
+  ctx.fillRect(0, 0, 128, 128);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
+function makeHeldM4BatTexture() {
+  const c = document.createElement('canvas');
+  c.width = 128;
+  c.height = 512;
+  const ctx = c.getContext('2d');
+  ctx.fillStyle = '#dbb078';
+  ctx.fillRect(0, 0, 128, 512);
+  ctx.fillStyle = 'rgba(115, 68, 22, 0.22)';
+  for (let i = 0; i < 8; i++) {
+    ctx.fillRect(10 + i * 15, 0, 2, 485);
+  }
+  // M4 Beast Shield Sticker
+  ctx.fillStyle = '#ffffff';
+  ctx.strokeStyle = '#1e3a8a';
+  ctx.lineWidth = 4;
+  ctx.fillRect(16, 64, 96, 150);
+  ctx.strokeRect(16, 64, 96, 150);
+  ctx.fillStyle = '#dc2626';
+  ctx.font = '900 44px Arial';
+  ctx.textAlign = 'center';
+  ctx.fillText('M4', 64, 118);
+  ctx.fillStyle = '#1e3a8a';
+  ctx.font = '800 13px Arial';
+  ctx.fillText('BEAST PRO', 64, 145);
+  ctx.fillStyle = '#dc2626';
+  ctx.fillRect(22, 162, 84, 24);
+  ctx.fillStyle = '#fde047';
+  ctx.font = '900 12px Arial';
+  ctx.fillText('SULTAN', 64, 179);
+  // Red rubber toe guard
+  ctx.fillStyle = '#b91c1c';
+  ctx.fillRect(0, 484, 128, 28);
+  const tex = new THREE.CanvasTexture(c);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  return tex;
+}
+
 /**
- * Full 3D WebGL Showroom Stage:
- * - Distortion-free natural human-eye camera + gentle pointer parallax
- * - Real RoomEnvironment HDRI reflections so brass/gold trophies, glass counter & willow bats gleam
- * - Animated ceiling fan, rolling entrance shutter, and walk-to-target mascot locomotion
+ * Full 3D WebGL Showroom Stage (Round 2 Upgraded):
+ * - Unified THREE.LoadingManager across all 4 GLBs
+ * - Grounded radial contact shadows + indoor shadow-casting spotlight
+ * - Balanced exposure + outdoor/indoor sun & fog transition
+ * - Held 3D M4 Beast Edition Cricket Bat when Mansoor inspects gear in Chapter 04
+ * - Natural warm complexion & clean jersey normalScale on Mansoor
  */
 export class Phase1Stage {
   constructor(canvas, { onProgress, onReady, onError } = {}) {
@@ -25,12 +80,15 @@ export class Phase1Stage {
 
     this.clock = new THREE.Clock();
     this.mascot = null;
+    this.mascotShadow = null;
+    this.heldBat = null;
     this.morphMesh = null;
     this.ceilingFan = null;
     this.elapsed = 0;
     this.mixer = null;
     this.actions = new Map();
     this.currentAnim = null;
+    this.isMobile = window.innerWidth <= 860;
 
     this.desiredCamPos = new THREE.Vector3(...CHAPTERS[0].camera.pos);
     this.desiredCamTarget = new THREE.Vector3(...CHAPTERS[0].camera.target);
@@ -43,9 +101,11 @@ export class Phase1Stage {
     this.mascotDesiredAnim = CHAPTERS[0].mascot.anim;
     this.shutterOpen = 0;
 
+    this._initLoadingManager();
     this._rafId = null;
     this._initScene();
     this._buildShutter();
+    this._buildAmbientFloorAO();
     this._loadExterior();
     this._loadInterior();
     this._bindEvents();
@@ -54,16 +114,35 @@ export class Phase1Stage {
     this._animate();
   }
 
+  _initLoadingManager() {
+    this.loadingManager = new THREE.LoadingManager();
+    this.loadingManager.onProgress = (_url, itemsLoaded, itemsTotal) => {
+      if (itemsTotal > 0) {
+        this.onProgress?.(Math.min(99, Math.round((itemsLoaded / itemsTotal) * 100)));
+      }
+    };
+    this.loadingManager.onLoad = () => {
+      this.onProgress?.(100);
+      this.onReady?.();
+    };
+    this.loadingManager.onError = (url) => {
+      console.warn('Asset load warning:', url);
+      this.onError?.(url);
+    };
+
+    this.gltfLoader = new GLTFLoader(this.loadingManager);
+    this.gltfLoader.setMeshoptDecoder(MeshoptDecoder);
+  }
+
   _initScene() {
     const w = window.innerWidth;
     const h = window.innerHeight;
 
     this.scene = new THREE.Scene();
-    this.scene.background = new THREE.Color(0x8fbbe0);
-    this.scene.fog = new THREE.Fog(0x9ac3e3, 18, 44);
+    this.scene.background = new THREE.Color(0x88b4da);
+    this.scene.fog = new THREE.Fog(0x94bee0, 16, 42);
 
-    // Distortion-free centered human-eye lens (no frustum shear!)
-    this.camera = new THREE.PerspectiveCamera(w > 900 ? 48 : 58, w / h, 0.1, 60);
+    this.camera = new THREE.PerspectiveCamera(w > 900 ? 48 : 62, w / h, 0.1, 60);
     this.camera.position.copy(this.desiredCamPos);
     this.camera.lookAt(this.currentCamTarget);
 
@@ -76,45 +155,78 @@ export class Phase1Stage {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 1.08;
+    // Calibrated exposure so outdoor signs & white shelves never blow out
+    this.renderer.toneMappingExposure = 0.94;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
-    // Baked PBR showroom environment reflections (makes metallic gold trophies & glossy bats gleam)
     const pmrem = new THREE.PMREMGenerator(this.renderer);
     this.envRT = pmrem.fromScene(new RoomEnvironment(), 0.04);
     this.scene.environment = this.envRT.texture;
-    this.scene.environmentIntensity = 0.62;
+    this.scene.environmentIntensity = 0.58;
     pmrem.dispose();
 
-    const hemi = new THREE.HemisphereLight(0xfff9ee, 0x3b4d40, 1.25);
-    this.scene.add(hemi);
+    this.hemiLight = new THREE.HemisphereLight(0xfff8ed, 0x324238, 0.85);
+    this.scene.add(this.hemiLight);
 
-    const sun = new THREE.DirectionalLight(0xffe7bd, 2.35);
-    sun.position.set(5.5, 8.5, 7.5);
-    sun.castShadow = true;
-    sun.shadow.bias = -0.0004;
-    sun.shadow.normalBias = 0.02;
-    sun.shadow.mapSize.set(2048, 2048);
-    sun.shadow.camera.near = 1;
-    sun.shadow.camera.far = 30;
-    sun.shadow.camera.left = -12;
-    sun.shadow.camera.right = 12;
-    sun.shadow.camera.top = 10;
-    sun.shadow.camera.bottom = -6;
-    this.scene.add(sun);
+    this.sunLight = new THREE.DirectionalLight(0xffe5b8, 1.95);
+    this.sunLight.position.set(5.5, 8.5, 7.5);
+    this.sunLight.castShadow = true;
+    this.sunLight.shadow.bias = -0.0004;
+    this.sunLight.shadow.normalBias = 0.02;
+    this.sunLight.shadow.mapSize.set(2048, 2048);
+    this.sunLight.shadow.camera.near = 1;
+    this.sunLight.shadow.camera.far = 30;
+    this.sunLight.shadow.camera.left = -12;
+    this.sunLight.shadow.camera.right = 12;
+    this.sunLight.shadow.camera.top = 10;
+    this.sunLight.shadow.camera.bottom = -6;
+    this.scene.add(this.sunLight);
 
-    const shopFrontLED = new THREE.PointLight(0xfffaf0, 3.4, 9.5, 1.2);
-    shopFrontLED.position.set(0.05, 2.92, -0.45);
-    this.scene.add(shopFrontLED);
+    // Overhead indoor shadow-casting SpotLight so Mansoor, counter & floor sacks cast grounded turf shadows
+    this.indoorSpot = new THREE.SpotLight(0xfff7e8, 5.2, 12, Math.PI * 0.46, 0.55, 1.1);
+    this.indoorSpot.position.set(0.15, 3.12, -1.65);
+    this.indoorSpot.target.position.set(0.05, 0, -2.15);
+    this.indoorSpot.castShadow = true;
+    this.indoorSpot.shadow.bias = -0.0005;
+    this.indoorSpot.shadow.mapSize.set(1024, 1024);
+    this.scene.add(this.indoorSpot);
+    this.scene.add(this.indoorSpot.target);
 
-    const shopBackLED = new THREE.PointLight(0xfff6e5, 4.0, 10.5, 1.2);
-    shopBackLED.position.set(0.1, 2.92, -3.25);
+    const shopBackLED = new THREE.PointLight(0xfff3dc, 2.6, 9.5, 1.25);
+    shopBackLED.position.set(0.1, 2.88, -3.45);
     this.scene.add(shopBackLED);
 
-    const interiorFrontFill = new THREE.DirectionalLight(0xfff7eb, 0.95);
-    interiorFrontFill.position.set(0.8, 2.1, 4.0);
+    const interiorFrontFill = new THREE.DirectionalLight(0xfff6eb, 0.52);
+    interiorFrontFill.position.set(0.6, 2.0, 3.6);
     this.scene.add(interiorFrontFill);
+  }
+
+  _buildAmbientFloorAO() {
+    // Subtle dark contact-shadow strips along shelf/counter bases so furniture never looks floating on turf
+    const shadowTex = makeRadialShadowTexture();
+    const aoMat = new THREE.MeshBasicMaterial({
+      map: shadowTex,
+      transparent: true,
+      depthWrite: false,
+      opacity: 0.65,
+    });
+
+    const placements = [
+      [-1.18, 0.004, -0.05, 1.15, 1.55, -0.628], // Under angled front-left counter
+      [-1.45, 0.004, -2.65, 0.95, 3.4, 0], // Under left shelves & cartons
+      [-1.0, 0.004, -2.85, 0.85, 1.65, 0], // Under printed wholesale sacks & ball crate
+      [0.1, 0.004, -4.15, 2.3, 0.85, 0], // Under back bat stand
+      [1.62, 0.004, -1.25, 0.85, 4.2, 0], // Under right bat rack & shoe riser
+    ];
+    for (const [x, y, z, sx, sz, ry] of placements) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(sx, sz), aoMat);
+      m.rotation.order = 'YXZ';
+      m.rotation.x = -Math.PI / 2;
+      m.rotation.y = ry;
+      m.position.set(x, y, z);
+      this.scene.add(m);
+    }
   }
 
   _buildShutter() {
@@ -150,11 +262,44 @@ export class Phase1Stage {
     this.scene.add(this.shutterGroup);
   }
 
-  _loadExterior() {
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
+  _buildHeldBatProp() {
+    const group = new THREE.Group();
+    const batTex = makeHeldM4BatTexture();
+    const willowMat = new THREE.MeshStandardMaterial({ color: 0xd4a46a, roughness: 0.45 });
+    const faceMat = new THREE.MeshStandardMaterial({ map: batTex, roughness: 0.38 });
+    const gripMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.62 });
+    const scoopMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.7 });
 
-    loader.load(
+    // Pivot at (0, 0, 0) = grip/splice point right where Mansoor's cupped hands meet!
+    const blade = new THREE.Mesh(
+      new THREE.BoxGeometry(0.106, 0.52, 0.034),
+      [willowMat, willowMat, willowMat, willowMat, faceMat, willowMat]
+    );
+    blade.position.set(0, -0.32, 0);
+    blade.castShadow = true;
+    group.add(blade);
+
+    // Dual dark M4 scoop ovals on back (-Z)
+    for (const sy of [-0.40, -0.22]) {
+      const scoop = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.13, 14), scoopMat);
+      scoop.scale.set(1, 1, 0.25);
+      scoop.position.set(0, sy, -0.017);
+      group.add(scoop);
+    }
+
+    // Neon orange rubber coiled handle extending through Mansoor's hands (-0.06m .. +0.21m)
+    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.27, 14), gripMat);
+    handle.position.set(0, 0.075, 0);
+    handle.castShadow = true;
+    group.add(handle);
+
+    group.visible = false;
+    this.scene.add(group);
+    return group;
+  }
+
+  _loadExterior() {
+    this.gltfLoader.load(
       '/models/exterior.glb',
       (gltf) => {
         const ext = gltf.scene;
@@ -170,17 +315,12 @@ export class Phase1Stage {
         this.scene.add(ext);
       },
       undefined,
-      (err) => {
-        console.warn('Could not load exterior.glb:', err);
-      }
+      (err) => console.warn('Could not load exterior.glb:', err)
     );
   }
 
   _loadInterior() {
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
-
-    loader.load(
+    this.gltfLoader.load(
       '/models/interior.glb',
       (gltf) => {
         const interior = gltf.scene;
@@ -199,46 +339,33 @@ export class Phase1Stage {
         this.scene.add(interior);
       },
       undefined,
-      (err) => {
-        console.warn('Could not load interior.glb:', err);
-      }
+      (err) => console.warn('Could not load interior.glb:', err)
     );
   }
 
   _loadShopEmblem() {
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
-
-    loader.load(
+    this.gltfLoader.load(
       '/models/emblem.glb',
       (gltf) => {
-        const frontEmblem = gltf.scene;
-        frontEmblem.traverse((child) => {
+        const counterEmblem = gltf.scene;
+        counterEmblem.traverse((child) => {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = false;
           }
         });
-
-        // Mounted flush on the 36°-angled Front-Left Corner Showcase Counter facing the entrance
-        const counterEmblem = frontEmblem;
         counterEmblem.rotation.y = (-36 * Math.PI) / 180;
         counterEmblem.scale.setScalar(0.5);
-        counterEmblem.position.set(-0.922, 0.41, 0.138);
+        counterEmblem.position.set(-0.882, 0.41, 0.168);
         this.scene.add(counterEmblem);
       },
       undefined,
-      (err) => {
-        console.warn('Could not load shop emblem GLB:', err);
-      }
+      (err) => console.warn('Could not load shop emblem GLB:', err)
     );
   }
 
   _loadMascot() {
-    const loader = new GLTFLoader();
-    loader.setMeshoptDecoder(MeshoptDecoder);
-
-    loader.load(
+    this.gltfLoader.load(
       '/models/mascot.glb',
       (gltf) => {
         const model = gltf.scene;
@@ -252,11 +379,18 @@ export class Phase1Stage {
           if (child.isMesh) {
             child.castShadow = true;
             child.receiveShadow = false;
-            if (child.material) {
-              child.material.roughness = Math.max(child.material.roughness ?? 0.75, 0.78);
-              child.material.metalness = Math.min(child.material.metalness ?? 0, 0.05);
-              child.material.envMapIntensity = 0.35;
-            }
+            const mats = Array.isArray(child.material) ? child.material : [child.material];
+            mats.forEach((m) => {
+              if (!m) return;
+              m.roughness = Math.max(m.roughness ?? 0.78, 0.82);
+              m.metalness = 0.0;
+              m.envMapIntensity = 0.25;
+              // Neutralize oversaturated pumpkin-orange tint for a warm natural complexion
+              m.color.setRGB(0.84, 0.88, 0.92);
+              if (m.normalScale) {
+                m.normalScale.set(0.14, 0.14);
+              }
+            });
             if (child.morphTargetDictionary && child.morphTargetInfluences) {
               this.morphMesh = child;
             }
@@ -268,6 +402,21 @@ export class Phase1Stage {
         this.mascot.rotation.y = this.mascotTargetRotY;
         this.scene.add(this.mascot);
 
+        // Grounded radial contact shadow following Mansoor everywhere on turf & street
+        const shadowMat = new THREE.MeshBasicMaterial({
+          map: makeRadialShadowTexture(),
+          transparent: true,
+          depthWrite: false,
+          opacity: 0.78,
+        });
+        this.mascotShadow = new THREE.Mesh(new THREE.PlaneGeometry(0.82, 0.82), shadowMat);
+        this.mascotShadow.rotation.x = -Math.PI / 2;
+        this.mascotShadow.position.set(this.mascot.position.x, 0.006, this.mascot.position.z);
+        this.scene.add(this.mascotShadow);
+
+        // Held M4 Beast Edition Cricket Bat for Chapter 04 Quality & Grip Check
+        this.heldBat = this._buildHeldBatProp();
+
         this.mixer = new THREE.AnimationMixer(this.mascot);
         for (const clip of gltf.animations) {
           this.actions.set(clip.name, this.mixer.clipAction(clip));
@@ -278,27 +427,26 @@ export class Phase1Stage {
         this.mascot.updateMatrixWorld(true);
 
         let minBoneY = Infinity;
+        this.leftHandBone = null;
+        this.rightHandBone = null;
+        this._lhWorld = new THREE.Vector3();
+        this._rhWorld = new THREE.Vector3();
         this.mascot.traverse((obj) => {
-          if (obj.isBone && /Foot|Toe/i.test(obj.name)) {
-            const wp = new THREE.Vector3();
-            obj.getWorldPosition(wp);
-            if (wp.y < minBoneY) minBoneY = wp.y;
+          if (obj.isBone) {
+            if (/Foot|Toe/i.test(obj.name)) {
+              const wp = new THREE.Vector3();
+              obj.getWorldPosition(wp);
+              if (wp.y < minBoneY) minBoneY = wp.y;
+            }
+            if (/LeftHand$/i.test(obj.name)) this.leftHandBone = obj;
+            if (/RightHand$/i.test(obj.name)) this.rightHandBone = obj;
           }
         });
-        this._footOffsetY = Number.isFinite(minBoneY) ? -(minBoneY - 0.035) : 0;
+        this._footOffsetY = Number.isFinite(minBoneY) ? -(minBoneY - 0.032) : 0;
         this.mascot.position.y = this._footOffsetY;
-
-        this.onReady?.();
       },
-      (xhr) => {
-        if (xhr.total > 0) {
-          this.onProgress?.(Math.round((xhr.loaded / xhr.total) * 100));
-        }
-      },
-      (err) => {
-        console.error('Error loading mascot:', err);
-        this.onError?.(err);
-      }
+      undefined,
+      (err) => console.error('Error loading mascot:', err)
     );
   }
 
@@ -315,21 +463,40 @@ export class Phase1Stage {
   }
 
   applyStoryState(state) {
-    this.desiredCamPos.set(...state.camPos);
-    this.desiredCamTarget.set(...state.camTarget);
+    const aspect = window.innerWidth / Math.max(1, window.innerHeight);
+    if (aspect < 0.86) {
+      // Aspect-aware mobile portrait pullback so Mansoor & counter sit head-to-toe above bottom card!
+      const pull = THREE.MathUtils.clamp((0.96 - aspect) * 2.75, 0.45, 1.55);
+      const cp = new THREE.Vector3(...state.camPos);
+      const ct = new THREE.Vector3(...state.camTarget);
+      const ray = cp.clone().sub(ct).normalize();
+      cp.addScaledVector(ray, pull);
+      // Clamp indoor Z so pulling back inside the room never crosses outside the glass door (z = 1.02)
+      if (state.camPos[2] < 1.0) {
+        cp.z = Math.min(0.92, cp.z);
+        cp.x = THREE.MathUtils.clamp(cp.x, -1.2, 1.28);
+      }
+      ct.y -= 0.28 * pull;
+      this.desiredCamPos.copy(cp);
+      this.desiredCamTarget.copy(ct);
+    } else {
+      this.desiredCamPos.set(...state.camPos);
+      this.desiredCamTarget.set(...state.camTarget);
+    }
     this.shutterOpen = state.shutterOpen;
 
-    const ch = state.chapter;
-    this.mascotTargetPos.set(...ch.mascot.pos);
-    this.mascotTargetRotY = ch.mascot.rotY;
-    this.mascotDesiredAnim = ch.mascot.anim;
+    const mState = state.mascot || state.chapter.mascot;
+    this.mascotTargetPos.set(...mState.pos);
+    this.mascotTargetRotY = mState.rotY;
+    this.mascotDesiredAnim = mState.anim;
   }
 
   _bindEvents() {
     this._onResize = () => {
       const w = window.innerWidth;
       const h = window.innerHeight;
-      this.camera.fov = w > 900 ? 48 : 58;
+      this.isMobile = w <= 860;
+      this.camera.fov = w > 900 ? 48 : 62;
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(w, h);
@@ -337,7 +504,7 @@ export class Phase1Stage {
     this._onPointerMove = (e) => {
       const nx = (e.clientX / Math.max(1, window.innerWidth)) * 2 - 1;
       const ny = (e.clientY / Math.max(1, window.innerHeight)) * 2 - 1;
-      this.pointerOffset.set(nx * 0.14, -ny * 0.07);
+      this.pointerOffset.set(nx * 0.12, -ny * 0.06);
     };
     window.addEventListener('resize', this._onResize);
     window.addEventListener('pointermove', this._onPointerMove, { passive: true });
@@ -350,7 +517,6 @@ export class Phase1Stage {
 
     this.smoothPointer.lerp(this.pointerOffset, Math.min(1, dt * 4));
 
-    // Smooth steadycam follow + subtle natural look-around parallax
     this.camera.position.lerp(this.desiredCamPos, Math.min(1, dt * 6));
     this.currentCamTarget.lerp(this.desiredCamTarget, Math.min(1, dt * 6));
     this.camera.lookAt(
@@ -359,8 +525,17 @@ export class Phase1Stage {
       this.currentCamTarget.z
     );
 
+    // Smoothly balance outdoor sun vs indoor LED atmosphere based on camera Z
+    const indoorFactor = THREE.MathUtils.clamp((2.2 - this.camera.position.z) / 2.2, 0, 1);
+    if (this.sunLight) {
+      this.sunLight.intensity = THREE.MathUtils.lerp(1.95, 0.85, indoorFactor);
+    }
+    if (this.scene.fog) {
+      this.scene.fog.near = THREE.MathUtils.lerp(16, 26, indoorFactor);
+    }
+
     if (this.shutterGroup) {
-      const targetScaleY = Math.max(0.06, 1 - this.shutterOpen * 0.94);
+      const targetScaleY = Math.max(0.05, 1 - this.shutterOpen * 0.95);
       this.shutterGroup.scale.y += (targetScaleY - this.shutterGroup.scale.y) * Math.min(1, dt * 12);
     }
 
@@ -369,9 +544,18 @@ export class Phase1Stage {
     }
 
     if (this.mascot) {
-      const dx = this.mascotTargetPos.x - this.mascot.position.x;
-      const dz = this.mascotTargetPos.z - this.mascot.position.z;
-      const dist = Math.hypot(dx, dz);
+      let dx = this.mascotTargetPos.x - this.mascot.position.x;
+      let dz = this.mascotTargetPos.z - this.mascot.position.z;
+      let dist = Math.hypot(dx, dz);
+
+      // Snap near target on distant pill-click jumps so Mansoor never walks through counters/walls
+      if (dist > 2.4) {
+        this.mascot.position.x = this.mascotTargetPos.x - (dx / dist) * 0.32;
+        this.mascot.position.z = this.mascotTargetPos.z - (dz / dist) * 0.32;
+        dx = this.mascotTargetPos.x - this.mascot.position.x;
+        dz = this.mascotTargetPos.z - this.mascot.position.z;
+        dist = Math.hypot(dx, dz);
+      }
 
       if (dist > 0.14) {
         const walkSpeed = Math.min(4.8, 1.45 + dist * 0.75);
@@ -396,7 +580,37 @@ export class Phase1Stage {
       if (this._footOffsetY !== undefined) {
         this.mascot.position.y = this._footOffsetY;
       }
+
+      if (this.mascotShadow) {
+        this.mascotShadow.position.x = this.mascot.position.x;
+        this.mascotShadow.position.z = this.mascot.position.z;
+      }
+
       this.mixer?.update(dt);
+
+      // Lock held M4 Beast Edition Cricket Bat directly to Mansoor's actual LeftHand + RightHand bones!
+      if (this.heldBat) {
+        const showBat = dist <= 0.2 && this.mascotDesiredAnim === 'inspect';
+        this.heldBat.visible = showBat;
+        if (showBat) {
+          this.mascot.updateMatrixWorld(true);
+          const yaw = this.mascot.rotation.y;
+          if (this.leftHandBone && this.rightHandBone) {
+            this.leftHandBone.getWorldPosition(this._lhWorld);
+            this.rightHandBone.getWorldPosition(this._rhWorld);
+            this.heldBat.position.lerpVectors(this._lhWorld, this._rhWorld, 0.5);
+            this.heldBat.position.y -= 0.02;
+          } else {
+            this.heldBat.position.set(
+              this.mascot.position.x + Math.sin(yaw) * 0.32,
+              1.12,
+              this.mascot.position.z + Math.cos(yaw) * 0.32
+            );
+          }
+          // Angle bat naturally across his hands so handle sits inside his palms and M4 blade faces camera!
+          this.heldBat.rotation.set(-0.62, yaw + 0.32, 0.52);
+        }
+      }
 
       if (this.morphMesh?.morphTargetDictionary && this.morphMesh.morphTargetInfluences) {
         const dict = this.morphMesh.morphTargetDictionary;

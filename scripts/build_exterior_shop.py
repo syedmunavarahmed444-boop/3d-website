@@ -96,7 +96,7 @@ def make_pbr_mat(name, folder_name=None, tint=(1, 1, 1), uv_scale=(1, 1), rough_
     return mat
 
 # Create shared materials
-M_ASPHALT = make_pbr_mat("Asphalt", "asphalt_02", tint=(0.65, 0.65, 0.66), uv_scale=(5.0, 3.0), rough_default=0.9)
+M_ASPHALT = make_pbr_mat("Asphalt", "asphalt_02", tint=(0.44, 0.46, 0.49), uv_scale=(24.0, 14.0), rough_default=0.86)
 M_CONCRETE = make_pbr_mat("ConcreteSteps", "concrete_layers", tint=(0.82, 0.78, 0.72), uv_scale=(4.0, 1.5), rough_default=0.88)
 M_TURF = make_pbr_mat("TurfStepMat", None, tint=(0.06, 0.30, 0.09), rough_default=0.95)
 M_TILE_BROWN = make_pbr_mat("BrownTileFacade", "brown_floor_tiles", tint=(0.65, 0.42, 0.30), uv_scale=(2.2, 2.2), rough_default=0.55)
@@ -120,9 +120,9 @@ M_GLASS.node_tree.nodes["Principled BSDF"].inputs["Alpha"].default_value = 0.22
 if hasattr(M_GLASS, 'surface_render_method'):
     M_GLASS.surface_render_method = 'BLENDED'
 
-# Signage materials (subtle backlit glow so colors remain saturated in daylight)
-M_SIGN_MAIN = make_pbr_mat("SignSultanMain", img_path=os.path.join(SIGN_DIR, "sultan_sign_main.png"), rough_default=0.38, emit_strength=0.18)
-M_SIGN_DOOR = make_pbr_mat("SignSultanDoor", img_path=os.path.join(SIGN_DIR, "sultan_sign_door.png"), rough_default=0.38, emit_strength=0.18)
+# Signage materials (crisp daylight legibility — minimal self-glow so yellow text never washes out)
+M_SIGN_MAIN = make_pbr_mat("SignSultanMain", img_path=os.path.join(SIGN_DIR, "sultan_sign_main.png"), rough_default=0.45, emit_strength=0.03)
+M_SIGN_DOOR = make_pbr_mat("SignSultanDoor", img_path=os.path.join(SIGN_DIR, "sultan_sign_door.png"), rough_default=0.45, emit_strength=0.03)
 M_POSTER = make_pbr_mat("PosterVertical", img_path=os.path.join(SIGN_DIR, "sultan_poster_vertical.png"), rough_default=0.42)
 M_SIGN_SPORTSWEAR = make_pbr_mat("SignSportswear", img_path=os.path.join(SIGN_DIR, "neighbor_sportswear.png"), rough_default=0.42, emit_strength=0.10)
 M_SIGN_TRAVELS = make_pbr_mat("SignTravels", img_path=os.path.join(SIGN_DIR, "neighbor_travels.png"), rough_default=0.42, emit_strength=0.06)
@@ -245,22 +245,22 @@ add_sign_panel("SultanPosterBoard", 3.48, 1.28, 1.43, 0.82, 1.64, 0.03, M_POSTER
 add_sign_panel("SultanDoorSign", 0.0, 3.06, 1.56, 2.45, 1.02, 0.16, M_SIGN_DOOR)
 add_sign_panel("SultanMainSign", 3.35, 3.12, 1.66, 3.95, 1.00, 0.18, M_SIGN_MAIN, yaw_deg=-4.0)
 
-# Hanging colorful hula hoops / rings on sky-blue pillar beside the door!
+# Hanging colorful hula hoops fanned out visibly on sky-blue pillar beside the door!
 hoop_colors = [
-    (0.15, 0.85, 0.25),
-    (0.95, 0.82, 0.10),
-    (0.10, 0.45, 0.92),
-    (0.92, 0.20, 0.25),
-    (0.95, 0.52, 0.10),
+    (0.12, 0.88, 0.24),
+    (0.98, 0.82, 0.06),
+    (0.08, 0.45, 0.96),
+    (0.95, 0.16, 0.22),
+    (0.98, 0.48, 0.06),
 ]
-add_cyl("HoopPeg", 1.92, 1.76, 1.48, 0.025, 0.28, M_DARK_STEEL, axis='Z')
+add_cyl("HoopPeg", 1.94, 1.82, 1.50, 0.025, 0.34, M_DARK_STEEL, axis='Z')
 for i, col in enumerate(hoop_colors):
-    m_h = make_pbr_mat(f"HoopMat_{i}", None, tint=col, rough_default=0.35)
-    bpy.ops.mesh.primitive_torus_add(major_radius=0.33, minor_radius=0.016, major_segments=28, minor_segments=10)
+    m_h = make_pbr_mat(f"HoopMat_{i}", None, tint=col, rough_default=0.32)
+    bpy.ops.mesh.primitive_torus_add(major_radius=0.34, minor_radius=0.021, major_segments=32, minor_segments=12)
     hoop = bpy.context.active_object
     hoop.name = f"Hoop_{i}"
-    hoop.location = (1.92, -(1.46 + i * 0.035), 1.45)
-    hoop.rotation_euler = (math.pi / 2 + math.radians(i * 3), 0, math.radians(-8 + i * 2))
+    hoop.location = (1.88 + i * 0.032, -(1.46 + i * 0.042), 1.50 - i * 0.038)
+    hoop.rotation_euler = (math.pi / 2 + math.radians((i - 2) * 5), math.radians((i - 2) * 4), math.radians(-10 + i * 4))
     hoop.data.materials.append(m_h)
     link_obj(hoop)
 
@@ -331,13 +331,25 @@ add_box("SportswearCeiling", -3.55, 3.45, 0.0, 3.35, 0.16, 2.6, M_PLASTER_CREAM)
 add_box("SportswearWallL", -5.20, 1.75, 0.0, 0.25, 3.50, 2.6, M_PLASTER_CREAM)
 add_box("SportswearHeader", -3.55, 3.12, 1.25, 3.35, 0.84, 0.34, M_PLASTER_CREAM)
 add_sign_panel("SportswearSign", -3.55, 3.08, 1.48, 3.05, 0.92, 0.16, M_SIGN_SPORTSWEAR)
-# Hanging sports jerseys inside Modern Sportswear open bay
-add_cyl("JerseyRod", -3.45, 2.25, 0.65, 0.015, 2.1, M_PVC_GREY, axis='X')
-for jx, jcol in [(-3.9, (0.08, 0.45, 0.18)), (-3.45, (0.12, 0.25, 0.72)), (-3.0, (0.78, 0.14, 0.14))]:
-    jm = make_pbr_mat(f"Jersey_{jx}", None, tint=jcol, rough_default=0.85)
-    add_box(f"HangJersey_{jx}", jx, 1.85, 0.65, 0.38, 0.56, 0.08, jm)
-    add_box(f"HangSleeveL_{jx}", jx - 0.22, 2.02, 0.65, 0.14, 0.20, 0.08, jm, rot_z_deg=18)
-    add_box(f"HangSleeveR_{jx}", jx + 0.22, 2.02, 0.65, 0.14, 0.20, 0.08, jm, rot_z_deg=-18)
+# Contoured sports jerseys + folded tracksuit shelves inside Modern Sportswear open bay
+add_box("SportswearRearShelfHi", -3.65, 2.05, -0.85, 2.6, 0.05, 0.45, M_DARK_STEEL)
+add_box("SportswearRearShelfMid", -3.65, 1.45, -0.85, 2.6, 0.05, 0.45, M_DARK_STEEL)
+for fs_i, fs_col in enumerate([(0.08, 0.52, 0.32), (0.12, 0.30, 0.78), (0.85, 0.55, 0.10), (0.78, 0.15, 0.20)]):
+    fsm = make_pbr_mat(f"FoldStack_{fs_i}", None, tint=fs_col, rough_default=0.82)
+    add_box(f"TracksuitStackHi_{fs_i}", -4.45 + fs_i * 0.52, 2.20, -0.82, 0.38, 0.24, 0.34, fsm)
+    add_box(f"TracksuitStackMid_{fs_i}", -4.45 + fs_i * 0.52, 1.60, -0.82, 0.38, 0.24, 0.34, fsm)
+
+add_cyl("JerseyRod", -3.35, 2.28, 0.65, 0.015, 1.9, M_PVC_GREY, axis='X')
+for jx, jcol in [(-3.85, (0.08, 0.52, 0.20)), (-3.35, (0.10, 0.28, 0.78)), (-2.85, (0.82, 0.16, 0.14))]:
+    jm = make_pbr_mat(f"Jersey_{jx}", None, tint=jcol, rough_default=0.78)
+    jbody = add_box(f"HangJersey_{jx}", jx, 1.86, 0.65, 0.40, 0.58, 0.10, jm, rot_y_deg=18)
+    bv = jbody.modifiers.new("Jbv", "BEVEL")
+    bv.width = 0.02
+    bv.segments = 2
+    bpy.context.view_layer.objects.active = jbody
+    bpy.ops.object.modifier_apply(modifier=bv.name)
+    add_cyl(f"HangSleeveL_{jx}", jx - 0.22, 2.02, 0.60, 0.068, 0.22, jm, axis='Y', segs=12)
+    add_cyl(f"HangSleeveR_{jx}", jx + 0.22, 2.02, 0.70, 0.068, 0.22, jm, axis='Y', segs=12)
 
 # Neighbor 2: Apsara Travels (x = -8.4 .. -5.2)
 add_box("TravelsPillarL", -8.35, 1.75, 1.25, 0.30, 3.50, 0.34, M_PLASTER_MINT)
@@ -354,27 +366,38 @@ for rib in range(14):
 add_sign_panel("DairySign", -10.0, 3.08, 1.48, 2.95, 0.92, 0.16, M_SIGN_DAIRY)
 
 # ==============================================================================
-# 5. RIGHT SIDE TREE WITH WARM FAIRY LIGHTS & BOUNDARY WALL
+# 5. RIGHT SIDE NEEM TREE WITH TRUNK-WRAPPED WARM FAIRY LIGHTS & FULL CANOPY
 # ==============================================================================
-add_cyl("TreeTrunk", 5.55, 2.15, 2.25, 0.32, 4.30, M_BARK, axis='Y', segs=14)
-add_cyl("TreeBranch1", 5.95, 4.10, 2.30, 0.16, 1.80, M_BARK, axis='Y', segs=10)
-# Spiral fairy light bulbs wrapped around the tree trunk
-for fb in range(22):
-    ang = fb * 0.72
-    fy = 0.65 + fb * 0.14
-    fx = 5.55 + math.cos(ang) * 0.34
-    fz = 2.25 + math.sin(ang) * 0.34
-    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.025, segments=8, ring_count=6)
+add_cyl("TreeTrunk", 5.55, 2.15, 2.25, 0.32, 4.30, M_BARK, axis='Y', segs=18)
+add_box("TreeBranchLeft", 5.15, 3.85, 2.30, 0.18, 1.35, 0.18, M_BARK, rot_z_deg=28)
+add_box("TreeBranchRight", 5.95, 3.95, 2.20, 0.18, 1.45, 0.18, M_BARK, rot_z_deg=-26)
+# Spiral warm golden fairy lights hugging flush onto the bark surface (radius 0.312 on 0.32 trunk)
+for fb in range(26):
+    ang = fb * 0.68
+    fy = 0.55 + fb * 0.125
+    fx = 5.55 + math.cos(ang) * 0.312
+    fz = 2.25 + math.sin(ang) * 0.312
+    bpy.ops.mesh.primitive_uv_sphere_add(radius=0.020, segments=8, ring_count=6)
     bulb = bpy.context.active_object
     bulb.name = f"FairyBulb_{fb}"
     bulb.location = (fx, -fz, fy)
     bulb.data.materials.append(M_FAIRY_GLOW)
     link_obj(bulb)
-# Leafy canopy spheres overhead right (smoother organic silhouette)
-for cx, cy, cz, cr in [(5.7, 5.2, 2.4, 1.25), (6.8, 5.5, 2.0, 1.15), (4.8, 5.4, 2.6, 0.95)]:
+# Rich multi-cluster Neem foliage canopy overhead right
+canopy_clusters = [
+    (5.5, 4.85, 2.3, 1.35),
+    (6.5, 5.15, 2.0, 1.25),
+    (4.6, 4.95, 2.5, 1.10),
+    (5.9, 5.65, 2.2, 1.30),
+    (5.0, 5.45, 1.8, 1.05),
+    (6.9, 4.75, 2.5, 1.05),
+]
+for idx_c, (cx, cy, cz, cr) in enumerate(canopy_clusters):
     bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=3, radius=cr)
     lf = bpy.context.active_object
-    lf.name = f"LeafCluster_{cx}"
+    lf.name = f"LeafCluster_{idx_c}"
+    lf.scale = (1.12, 1.05, 0.88)
+    bpy.ops.object.transform_apply(scale=True)
     lf.location = (cx, -cz, cy)
     lf.data.materials.append(M_LEAVES)
     link_obj(lf)
@@ -431,6 +454,4 @@ def snap_cam(name, tx, ty, tz, lx, ly, lz):
     scene.render.filepath = os.path.join(PREVIEW_DIR, f"{name}.png")
     bpy.ops.render.render(write_still=True)
 
-snap_cam("exterior_wide", -0.8, 1.95, 10.8, 0.2, 1.85, 1.25)
-snap_cam("exterior_door_closeup", 0.5, 1.75, 6.2, 0.6, 1.65, 1.35)
 print("EXTERIOR_DONE")

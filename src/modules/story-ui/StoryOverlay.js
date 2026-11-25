@@ -106,7 +106,12 @@ export class StoryOverlay {
     if (this.percentPillEl) this.percentPillEl.textContent = `${pct}%`;
 
     this.chapterNavEl.querySelectorAll('.chapter-pill').forEach((btn, idx) => {
-      btn.classList.toggle('is-active', idx === state.chapterIdx);
+      const active = idx === state.chapterIdx;
+      btn.classList.toggle('is-active', active);
+      if (active && this._lastNavIdx !== state.chapterIdx) {
+        this._lastNavIdx = state.chapterIdx;
+        btn.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+      }
     });
 
     this.cardEl.style.opacity = String(state.textOpacity);
@@ -142,7 +147,10 @@ export class StoryOverlay {
 
       const tabsHtml = PRODUCTS.map(
         (p, idx) =>
-          `<button type="button" class="rack-tab ${idx === productIdx ? 'is-active' : ''}" data-rack-idx="${idx}">${p.index}</button>`
+          `<button type="button" class="rack-tab ${idx === productIdx ? 'is-active' : ''}" data-rack-idx="${idx}">
+            <span class="rt-num">${p.index}</span>
+            <span class="rt-lbl">${p.shortTab || ''}</span>
+          </button>`
       ).join('');
 
       const packsHtml = prod.packs

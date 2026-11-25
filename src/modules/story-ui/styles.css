@@ -127,8 +127,13 @@ body {
 .brand-lockup {
   display: flex;
   align-items: center;
-  gap: 11px;
+  gap: 10px;
   pointer-events: auto;
+  padding: 5px 14px 5px 6px;
+  border-radius: 999px;
+  background: rgba(8, 31, 24, 0.86);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(10px);
 }
 
 .brand-seal {
@@ -201,23 +206,27 @@ body {
   text-align: center;
 }
 
-/* Compact bottom-left story panel so center & upper 3D showroom stay wide open without camera distortion */
+/* Compact bottom-left story panel so center & right 68% of 3D showroom stay wide open */
 .story-card {
   position: fixed;
-  left: clamp(16px, 2.6vw, 36px);
-  bottom: 84px;
-  width: min(385px, 36vw);
-  max-height: calc(100vh - 158px);
+  left: clamp(14px, 2.2vw, 30px);
+  bottom: 82px;
+  width: min(348px, 31vw);
+  max-height: calc(100vh - 156px);
   overflow-y: auto;
   z-index: 15;
-  padding: 20px 22px;
+  padding: 18px 20px;
   border-radius: 16px;
   background: var(--surface);
   backdrop-filter: blur(14px);
   border: 1px solid var(--border);
   box-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
   transition: opacity 0.25s ease, background 0.25s ease;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+}
+
+.story-card::-webkit-scrollbar {
+  display: none;
 }
 
 .story-card.is-solid {
@@ -276,11 +285,26 @@ body {
   background: rgba(255, 255, 255, 0.05);
   color: var(--muted);
   font-family: var(--font-body);
-  font-size: 11px;
-  font-weight: 700;
-  padding: 5px 0;
-  border-radius: 6px;
+  padding: 4px 2px;
+  border-radius: 7px;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+}
+
+.rt-num {
+  font-size: 10px;
+  font-weight: 800;
+  line-height: 1.05;
+}
+
+.rt-lbl {
+  font-size: 8.5px;
+  font-weight: 700;
+  line-height: 1.05;
+  opacity: 0.92;
 }
 
 .rack-tab.is-active {
@@ -713,6 +737,12 @@ body {
   justify-content: space-between;
   gap: 5px;
   overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.chapter-nav::-webkit-scrollbar {
+  display: none;
 }
 
 .chapter-pill {
@@ -745,17 +775,30 @@ body {
     display: none;
   }
 
+  .brand-name {
+    font-size: 11.5px;
+  }
+
+  .brand-sub {
+    font-size: 9.5px;
+  }
+
   .story-card {
     left: 10px;
     right: 10px;
-    bottom: 78px;
+    bottom: 72px;
     width: auto;
-    max-height: 44vh;
-    padding: 15px 16px;
+    max-height: 38vh;
+    padding: 13px 14px;
   }
 
   .card-title {
-    font-size: 19px;
+    font-size: 18px;
+  }
+
+  .chapter-pill {
+    font-size: 11px;
+    padding: 4px 7px;
   }
 }
 
