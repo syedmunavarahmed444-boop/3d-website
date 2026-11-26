@@ -24,6 +24,7 @@ export class ShowroomUXController {
     this.phase = 'onboarding'; // 'onboarding' | 'welcome' | 'inside'
     this.authTab = 'signup';
     this.activeSectionId = null; // Currently opened 3D product popup
+    this.cardPhotoIdx = 0; // Active real photo index right inside the price card!
     this.popoverMode = null; // null | 'search' | 'services' | 'bag'
     this.searchQuery = '';
 
@@ -262,9 +263,22 @@ export class ShowroomUXController {
         this.closeObjectPopup();
         return;
       }
-      const stackBtn = e.target.closest('button[data-open-stack]');
-      if (stackBtn) {
-        this.openPhotoStack(stackBtn.dataset.openStack);
+      const navBtn = e.target.closest('button[data-card-photo-step]');
+      if (navBtn) {
+        e.stopPropagation();
+        this._stepCardPhoto(Number(navBtn.dataset.cardPhotoStep));
+        return;
+      }
+      const dotBtn = e.target.closest('button[data-card-photo-dot]');
+      if (dotBtn) {
+        e.stopPropagation();
+        this.cardPhotoIdx = Number(dotBtn.dataset.cardPhotoDot);
+        this._updateInlineCardDeck();
+        return;
+      }
+      const expandBtn = e.target.closest('[data-open-stack]');
+      if (expandBtn && !this._cardDragged) {
+        this.openPhotoStack(expandBtn.dataset.openStack, this.cardPhotoIdx);
         return;
       }
       const stepBtn = e.target.closest('button[data-step]');
@@ -277,6 +291,63 @@ export class ShowroomUXController {
         this.togglePopover('bag');
       }
     });
+
+    // Direct touch & mouse swipe right on the price card's real-photo stack!
+    let startX = null;
+    let dx = 0;
+    let frontSlide = null;
+    this._cardDragged = false;
+
+    this.objectPopup?.addEventListener('pointerdown', (e) => {
+      const deck = e.target.closest('.obj-photo-deck');
+      if (!deck || e.target.closest('button[data-card-photo-step]') || e.target.closest('button[data-card-photo-dot]')) {
+        return;
+      }
+      frontSlide = deck.querySelector('.obj-slide[data-offset="0"]');
+      if (!frontSlide) return;
+      startX = e.clientX;
+      dx = 0;
+      this._cardDragged = false;
+      frontSlide.classList.add('is-dragging');
+      deck.setPointerCapture?.(e.pointerId);
+    });
+
+    this.objectPopup?.addEventListener('pointermove', (e) => {
+      if (startX === null || !frontSlide) return;
+      dx = e.clientX - startX;
+      if (Math.abs(dx) > 8) this._cardDragged = true;
+      const rot = Math.max(-10, Math.min(10, dx * 0.04));
+      frontSlide.style.transform = `translate3d(${dx}px, 0, 0) rotate(${rot}deg)`;
+    });
+
+    const endCardSwipe = () => {
+      if (startX === null || !frontSlide) return;
+      frontSlide.classList.remove('is-dragging');
+      const moved = dx;
+      startX = null;
+      dx = 0;
+      if (Math.abs(moved) > 42) {
+        const dir = moved < 0 ? 1 : -1;
+        frontSlide.style.transform = `translate3d(${moved < 0 ? -240 : 240}px, 8px, 0) rotate(${moved < 0 ? -12 : 12}deg)`;
+        frontSlide.style.opacity = '0';
+        const ref = frontSlide;
+        frontSlide = null;
+        window.setTimeout(() => {
+          ref.style.transform = '';
+          ref.style.opacity = '';
+          this._stepCardPhoto(dir);
+        }, 150);
+      } else {
+        frontSlide.style.transform = '';
+        frontSlide = null;
+      }
+      window.setTimeout(() => {
+        this._cardDragged = false;
+      }, 60);
+    };
+
+    this.objectPopup?.addEventListener('pointerup', endCardSwipe);
+    this.objectPopup?.addEventListener('pointercancel', endCardSwipe);
   }
 
   setPhase(nextPhase) {
@@ -344,10 +415,12 @@ export class ShowroomUXController {
   openObjectPopup(productId) {
     const prod = PRODUCTS.find((p) => p.id === productId);
     if (!prod || !this.objectPopup) return;
+    if (this.activeSectionId !== prod.id) {
+      this.cardPhotoIdx = 0;
+    }
     this.activeSectionId = prod.id;
     this._syncSectionChips();
 
-    const galleryCount = prod.gallery?.length || 1;
     const summary = this.cart.getSummary();
 
     const packsHtml = prod.packs
@@ -372,15 +445,6 @@ export class ShowroomUXController {
 
     this.objectPopup.innerHTML = `
       <div class="obj-head">
-        <button
-          type="button"
-          class="obj-thumb-btn"
-          data-open-stack="${prod.id}"
-          title="Tap to swipe ${galleryCount} real photos"
-        >
-          <img src="${prod.image}" alt="${prod.name}" />
-          <span class="obj-stack-badge">⧉ ${galleryCount}</span>
-        </button>
         <div class="obj-title-col">
           <span class="obj-sec-tag">SECTION ${prod.index} · FROM ${formatInr(prod.retailPrice)}</span>
           <h3 class="obj-title">${prod.name}</h3>
@@ -388,19 +452,82 @@ export class ShowroomUXController {
         </div>
         <button type="button" class="mini-close-btn" data-close-obj="1" aria-label="Close card">✕</button>
       </div>
+
+      <!-- Inline Swipeable Real-Photo Stack Right on the Price Card -->
+      <div class="obj-gallery-stage">
+        <button type="button" class="obj-gal-arrow is-prev" data-card-photo-step="-1" aria-label="Previous real photo">‹</button>
+        <div class="obj-photo-deck" data-open-stack="${prod.id}" title="Swipe left/right or tap to zoom"></div>
+        <button type="button" class="obj-gal-arrow is-next" data-card-photo-step="1" aria-label="Next real photo">›</button>
+      </div>
+
       <div class="obj-packs">${packsHtml}</div>
+
       <div class="obj-foot">
         <span class="obj-foot-note" data-obj-bag-summary>
           ${
             summary.totalPacks > 0
               ? `In Bag: ${summary.totalPacks} packs · ${formatInr(summary.totalAmount)}`
-              : 'Tap photo for gallery · Tap + to add'
+              : 'Swipe photos above · Tap + to add'
           }
         </span>
         <button type="button" class="obj-bag-link" data-open-bag-from-card="1">Kit Bag →</button>
       </div>
     `;
+
+    this._updateInlineCardDeck();
     this.objectPopup.hidden = false;
+  }
+
+  _stepCardPhoto(delta) {
+    const prod = PRODUCTS.find((p) => p.id === this.activeSectionId);
+    if (!prod) return;
+    const photos = prod.gallery?.length ? prod.gallery : [{ src: prod.image, caption: prod.name }];
+    this.cardPhotoIdx = (this.cardPhotoIdx + delta + photos.length) % photos.length;
+    this._updateInlineCardDeck();
+  }
+
+  _updateInlineCardDeck() {
+    const prod = PRODUCTS.find((p) => p.id === this.activeSectionId);
+    const deck = this.objectPopup?.querySelector('.obj-photo-deck');
+    if (!prod || !deck) return;
+
+    const photos = prod.gallery?.length ? prod.gallery : [{ src: prod.image, caption: prod.name }];
+    const n = photos.length;
+    const activeIdx = ((this.cardPhotoIdx % n) + n) % n;
+    const activePhoto = photos[activeIdx];
+
+    const slidesHtml = photos
+      .map((item, idx) => {
+        const offset = (idx - activeIdx + n) % n;
+        return `
+          <figure class="obj-slide" data-offset="${offset}">
+            <img src="${item.src}" alt="${item.caption}" draggable="false" />
+          </figure>
+        `;
+      })
+      .join('');
+
+    const dotsHtml = photos
+      .map(
+        (_, idx) => `
+          <button
+            type="button"
+            class="obj-dot ${idx === activeIdx ? 'is-active' : ''}"
+            data-card-photo-dot="${idx}"
+            aria-label="Photo ${idx + 1}"
+          ></button>
+        `
+      )
+      .join('');
+
+    deck.innerHTML = `
+      ${slidesHtml}
+      <div class="obj-slide-bar">
+        <span class="obj-slide-cap">${activePhoto.caption}</span>
+        <span class="obj-slide-count">${activeIdx + 1}/${n} ⤢</span>
+      </div>
+      <div class="obj-dots">${dotsHtml}</div>
+    `;
   }
 
   closeObjectPopup() {
@@ -713,11 +840,11 @@ export class ShowroomUXController {
     this.stackDeck?.addEventListener('pointercancel', finishDrag);
   }
 
-  openPhotoStack(productId) {
+  openPhotoStack(productId, initialIdx = 0) {
     const prod = PRODUCTS.find((p) => p.id === productId);
     if (!prod || !this.stackModal) return;
     this.stackProduct = prod;
-    this.stackIndex = 0;
+    this.stackIndex = initialIdx;
 
     if (this.stackBadge) {
       this.stackBadge.textContent = `${prod.index} · ${prod.shortTab.toUpperCase()} · FROM ${formatInr(prod.retailPrice)}`;
