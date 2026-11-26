@@ -388,15 +388,25 @@ export class ShowroomUXController {
         <article class="fx-prod-card" data-pid="${prod.id}">
           <div class="fx-prod-head">
             <div class="fx-prod-meta">
-              <span class="fx-prod-idx">${prod.index}</span>
-              <div>
+              <div class="fx-prod-thumb-wrap">
+                <img
+                  src="${prod.image || `/products/${prod.id}.webp`}"
+                  alt="${prod.name}"
+                  class="fx-prod-thumb"
+                  width="68"
+                  height="68"
+                  loading="lazy"
+                />
+                <span class="fx-prod-idx">${prod.index}</span>
+              </div>
+              <div class="fx-prod-text">
                 <h3 class="fx-prod-title">${prod.name}</h3>
                 <p class="fx-prod-sub">${prod.subtitle}</p>
+                <div class="fx-prod-price-row">
+                  <span class="fx-prod-price">From ${formatInr(prod.retailPrice)}</span>
+                  <span class="fx-prod-cue">Hover / Tap ↗</span>
+                </div>
               </div>
-            </div>
-            <div class="fx-prod-price-col">
-              <span class="fx-prod-price">From ${formatInr(prod.retailPrice)}</span>
-              <span class="fx-prod-cue">Hover / Tap ↗</span>
             </div>
           </div>
           <div class="fx-pack-drawer">
