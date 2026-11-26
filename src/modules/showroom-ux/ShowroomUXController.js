@@ -28,11 +28,16 @@ export class ShowroomUXController {
     this.hoveredProductId = null;
     this._hoverTimer = null;
 
+    // Swipeable photo stack gallery state
+    this.stackProduct = null;
+    this.stackIndex = 0;
+
     this._cacheElements();
     this._bindOnboarding();
     this._bindWelcome();
     this._bindTopbar();
     this._bindFloatingPanel();
+    this._bindPhotoStack();
 
     this.cart.subscribe((summary) => this._onCartUpdate(summary));
     this._renderCatalogList();
@@ -76,6 +81,18 @@ export class ShowroomUXController {
     this.panelWaBtn = document.getElementById('panel-wa-btn');
 
     this.liveSpotBadge = document.getElementById('live-spot-badge');
+
+    // Photo stack modal elements
+    this.stackModal = document.getElementById('photo-stack-modal');
+    this.stackBadge = document.getElementById('stack-cat-badge');
+    this.stackTitle = document.getElementById('stack-title');
+    this.stackCloseBtn = document.getElementById('stack-close-btn');
+    this.stackPrevBtn = document.getElementById('stack-prev-btn');
+    this.stackNextBtn = document.getElementById('stack-next-btn');
+    this.stackDeck = document.getElementById('stack-deck');
+    this.stackCaption = document.getElementById('stack-caption');
+    this.stackCounter = document.getElementById('stack-counter');
+    this.stackThumbs = document.getElementById('stack-thumbs');
   }
 
   setLoadProgress(pct) {
@@ -162,8 +179,17 @@ export class ShowroomUXController {
       this._emitCameraForCurrentView();
     });
 
-    // Click handler for product selection & + / - steppers
+    // Click handler for photo stack, product selection & + / - steppers
     this.catalogScroll?.addEventListener('click', (e) => {
+      const stackBtn = e.target.closest('button[data-open-stack]');
+      if (stackBtn) {
+        e.stopPropagation();
+        const pid = stackBtn.dataset.openStack;
+        this._focusProduct(pid, { lock: true });
+        this.openPhotoStack(pid);
+        return;
+      }
+
       const stepBtn = e.target.closest('button[data-step]');
       if (stepBtn) {
         e.stopPropagation();
@@ -384,11 +410,18 @@ export class ShowroomUXController {
         })
         .join('');
 
+      const galleryCount = (prod.gallery && prod.gallery.length) || 1;
       return `
         <article class="fx-prod-card" data-pid="${prod.id}">
           <div class="fx-prod-head">
             <div class="fx-prod-meta">
-              <div class="fx-prod-thumb-wrap">
+              <button
+                type="button"
+                class="fx-prod-thumb-wrap"
+                data-open-stack="${prod.id}"
+                aria-label="Open ${galleryCount} real photos of ${prod.name}"
+                title="Tap to swipe ${galleryCount} real photos"
+              >
                 <img
                   src="${prod.image || `/products/${prod.id}.webp`}"
                   alt="${prod.name}"
@@ -398,13 +431,14 @@ export class ShowroomUXController {
                   loading="lazy"
                 />
                 <span class="fx-prod-idx">${prod.index}</span>
-              </div>
+                <span class="fx-stack-pill">⧉ ${galleryCount}</span>
+              </button>
               <div class="fx-prod-text">
                 <h3 class="fx-prod-title">${prod.name}</h3>
                 <p class="fx-prod-sub">${prod.subtitle}</p>
                 <div class="fx-prod-price-row">
                   <span class="fx-prod-price">From ${formatInr(prod.retailPrice)}</span>
-                  <span class="fx-prod-cue">Hover / Tap ↗</span>
+                  <span class="fx-prod-cue">Tap photo · Hover 3D ↗</span>
                 </div>
               </div>
             </div>
@@ -548,6 +582,169 @@ export class ShowroomUXController {
           })
           .catch(() => {});
       }
+    }
+  }
+
+  /* =========================================================
+     SWIPEABLE PHOTO STACK GALLERY
+     ========================================================= */
+  _bindPhotoStack() {
+    this.stackCloseBtn?.addEventListener('click', () => this.closePhotoStack());
+    this.stackPrevBtn?.addEventListener('click', () => this.stepPhotoStack(-1));
+    this.stackNextBtn?.addEventListener('click', () => this.stepPhotoStack(1));
+
+    // Close on backdrop click
+    this.stackModal?.addEventListener('click', (e) => {
+      if (e.target === this.stackModal) this.closePhotoStack();
+    });
+
+    // Clickable bottom thumbnail strip
+    this.stackThumbs?.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-stack-idx]');
+      if (!btn) return;
+      this.stackIndex = Number(btn.dataset.stackIdx);
+      this._renderPhotoStackDeck();
+    });
+
+    // Keyboard navigation while stack is open
+    window.addEventListener('keydown', (e) => {
+      if (!this.stackProduct || this.stackModal?.hidden) return;
+      if (e.key === 'Escape') {
+        this.closePhotoStack();
+      } else if (e.key === 'ArrowRight') {
+        e.preventDefault();
+        this.stepPhotoStack(1);
+      } else if (e.key === 'ArrowLeft') {
+        e.preventDefault();
+        this.stepPhotoStack(-1);
+      }
+    });
+
+    // Touch & Mouse drag-to-swipe physics on the card deck
+    let dragStartX = null;
+    let dragDx = 0;
+    let activeCard = null;
+
+    this.stackDeck?.addEventListener('pointerdown', (e) => {
+      const topCard = this.stackDeck.querySelector('.stack-card[data-offset="0"]');
+      if (!topCard) return;
+      dragStartX = e.clientX;
+      dragDx = 0;
+      activeCard = topCard;
+      activeCard.classList.add('is-dragging');
+      this.stackDeck.setPointerCapture?.(e.pointerId);
+    });
+
+    this.stackDeck?.addEventListener('pointermove', (e) => {
+      if (dragStartX === null || !activeCard) return;
+      dragDx = e.clientX - dragStartX;
+      const rot = Math.max(-14, Math.min(14, dragDx * 0.045));
+      activeCard.style.transform = `translate3d(${dragDx}px, ${Math.abs(dragDx) * 0.05}px, 0) rotate(${rot}deg)`;
+    });
+
+    const finishDrag = () => {
+      if (dragStartX === null || !activeCard) return;
+      activeCard.classList.remove('is-dragging');
+      const dx = dragDx;
+      dragStartX = null;
+      dragDx = 0;
+      if (Math.abs(dx) > 55) {
+        const dir = dx < 0 ? 1 : -1;
+        activeCard.style.transform = `translate3d(${dx < 0 ? -360 : 360}px, 24px, 0) rotate(${dx < 0 ? -16 : 16}deg)`;
+        activeCard.style.opacity = '0';
+        const cardRef = activeCard;
+        activeCard = null;
+        window.setTimeout(() => {
+          cardRef.style.transform = '';
+          cardRef.style.opacity = '';
+          this.stepPhotoStack(dir);
+        }, 180);
+      } else {
+        activeCard.style.transform = '';
+        activeCard = null;
+      }
+    };
+
+    this.stackDeck?.addEventListener('pointerup', finishDrag);
+    this.stackDeck?.addEventListener('pointercancel', finishDrag);
+  }
+
+  openPhotoStack(productId) {
+    const prod = PRODUCTS.find((p) => p.id === productId);
+    if (!prod || !this.stackModal) return;
+    this.stackProduct = prod;
+    this.stackIndex = 0;
+
+    if (this.stackBadge) {
+      this.stackBadge.textContent = `${prod.index} · ${prod.shortTab.toUpperCase()} · FROM ${formatInr(prod.retailPrice)}`;
+    }
+    if (this.stackTitle) {
+      this.stackTitle.textContent = prod.name;
+    }
+
+    this._renderPhotoStackDeck();
+    this.stackModal.hidden = false;
+  }
+
+  closePhotoStack() {
+    if (!this.stackModal) return;
+    this.stackModal.hidden = true;
+    this.stackProduct = null;
+  }
+
+  stepPhotoStack(delta) {
+    if (!this.stackProduct) return;
+    const photos = this.stackProduct.gallery?.length
+      ? this.stackProduct.gallery
+      : [{ src: this.stackProduct.image, caption: this.stackProduct.name }];
+    this.stackIndex = (this.stackIndex + delta + photos.length) % photos.length;
+    this._renderPhotoStackDeck();
+  }
+
+  _renderPhotoStackDeck() {
+    if (!this.stackProduct || !this.stackDeck) return;
+    const photos = this.stackProduct.gallery?.length
+      ? this.stackProduct.gallery
+      : [{ src: this.stackProduct.image, caption: this.stackProduct.name }];
+    const n = photos.length;
+
+    // Render layered 3D stack (front card offset=0, next behind offset=1, third offset=2)
+    const cardsHtml = photos
+      .map((item, idx) => {
+        const offset = (idx - this.stackIndex + n) % n;
+        const depth = Math.min(offset, 2);
+        return `
+          <figure class="stack-card" data-offset="${offset}" data-depth="${depth}">
+            <img src="${item.src}" alt="${item.caption}" draggable="false" />
+          </figure>
+        `;
+      })
+      .join('');
+
+    this.stackDeck.innerHTML = cardsHtml;
+
+    const current = photos[this.stackIndex];
+    if (this.stackCaption) {
+      this.stackCaption.textContent = current.caption || this.stackProduct.name;
+    }
+    if (this.stackCounter) {
+      this.stackCounter.textContent = `${this.stackIndex + 1} / ${n} · Swipe or tap arrows`;
+    }
+    if (this.stackThumbs) {
+      this.stackThumbs.innerHTML = photos
+        .map(
+          (item, idx) => `
+            <button
+              type="button"
+              class="stack-thumb-btn ${idx === this.stackIndex ? 'is-active' : ''}"
+              data-stack-idx="${idx}"
+              aria-label="View photo ${idx + 1}"
+            >
+              <img src="${item.src}" alt="" />
+            </button>
+          `
+        )
+        .join('');
     }
   }
 }
