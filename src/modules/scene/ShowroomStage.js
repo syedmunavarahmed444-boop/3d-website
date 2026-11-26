@@ -3,6 +3,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { CHAPTERS } from '../brand/storeData.js';
+import { KadapaStreetTraffic } from './KadapaStreetTraffic.js';
 
 function lerpAngle(current, target, t) {
   let diff = ((target - current + Math.PI) % (Math.PI * 2)) - Math.PI;
@@ -139,14 +140,15 @@ export class ShowroomStage {
     this.desiredCamTarget = new THREE.Vector3(...CHAPTERS[0].camera.target);
     this.currentCamTarget = new THREE.Vector3(...CHAPTERS[0].camera.target);
 
-    // Interactive 360° Free-Swipe Inside Mode
+    // Interactive 360° Free-Swipe Inside Mode & Smooth Walk-In Glide Transition
     this.exploreMode = false;
-    this.standPos = new THREE.Vector3(0.08, 1.48, -1.25);
-    this.targetStandPos = new THREE.Vector3(0.08, 1.48, -1.25);
-    this.yaw = 2.05; // Facing front-left counter & Mansoor on entry
-    this.targetYaw = 2.05;
-    this.pitch = -0.06;
-    this.targetPitch = -0.06;
+    this.walkIn = null; // { t, duration, p0, p1, p2, l0, l1, l2 }
+    this.standPos = new THREE.Vector3(0.22, 1.48, -0.95);
+    this.targetStandPos = new THREE.Vector3(0.22, 1.48, -0.95);
+    this.yaw = 0.72;
+    this.targetYaw = 0.72;
+    this.pitch = -0.04;
+    this.targetPitch = -0.04;
     this.velYaw = 0;
     this._isDragging = false;
     this._dragMoved = 0;
@@ -173,6 +175,7 @@ export class ShowroomStage {
     this._buildShutter();
     this._buildAmbientFloorAO();
     this._buildWallSignsAndHitboxes();
+    this.streetTraffic = new KadapaStreetTraffic(this.scene);
     this._loadAllShowroomModels();
     this._bindEvents();
     this._syncLoopState();
@@ -652,17 +655,18 @@ export class ShowroomStage {
    */
   applyStoryState(state) {
     this.exploreMode = false;
+    this.walkIn = null;
     this.activeSectionId = null;
     this._lastState = state;
 
     const aspect = window.innerWidth / Math.max(1, window.innerHeight);
     if (aspect < 0.86) {
-      const pull = THREE.MathUtils.clamp((0.96 - aspect) * 2.6, 0.45, 1.45);
+      const pull = THREE.MathUtils.clamp((0.96 - aspect) * 2.5, 0.45, 1.65);
       const cp = new THREE.Vector3(...state.camPos);
       const ct = new THREE.Vector3(...state.camTarget);
       const ray = cp.clone().sub(ct).normalize();
       cp.addScaledVector(ray, pull);
-      ct.y -= 0.28 * pull;
+      ct.y -= 0.18 * pull;
       this.desiredCamPos.copy(cp);
       this.desiredCamTarget.copy(ct);
     } else {
@@ -678,28 +682,71 @@ export class ShowroomStage {
   }
 
   /**
-   * Activates 360° Free-Swipe Showroom Exploration inside the shop!
-   * Mansoor stands right beside the front-left glass counter welcoming you.
+   * Smoothly walks the camera across the road, through the open rolling shutter doorway,
+   * and into the showroom (2.15s quadratic Bezier glide — ZERO instant teleport!),
+   * then seamlessly activates 360° Free-Swipe Explore Mode beside Mansoor at the counter.
    */
   enterExploreMode() {
-    this.exploreMode = true;
     this.shutterOpen = 1;
-    this.targetStandPos.set(0.22, 1.48, -0.95);
-    // Start looking slightly left toward Mansoor & the Counter while showing the shop!
-    this.targetYaw = shortestYawTarget(this.yaw, 0.72);
-    this.targetPitch = -0.04;
     this.velYaw = 0;
 
+    // Mansoor walks inside ahead of you to welcome you beside the front-left counter
     this.mascotTargetPos.set(-0.56, 0, -0.86);
     this.mascotTargetRotY = 0.62;
     this.mascotDesiredAnim = 'greet';
+
+    const endPos = new THREE.Vector3(0.54, 1.48, 0.25);
+    const endLook = new THREE.Vector3(-0.38, 1.22, -1.95);
+
+    // Compute matching final yaw/pitch so handoff to 360° swipe has zero jump!
+    const fdx = endLook.x - endPos.x;
+    const fdy = endLook.y - endPos.y;
+    const fdz = endLook.z - endPos.z;
+    const endYaw = Math.atan2(-fdx, -fdz);
+    const endPitch = THREE.MathUtils.clamp(Math.atan2(fdy, Math.hypot(fdx, fdz)), -0.36, 0.36);
+
+    this.targetStandPos.copy(endPos);
+    this.standPos.copy(endPos);
+    this.yaw = endYaw;
+    this.targetYaw = endYaw;
+    this.pitch = endPitch;
+    this.targetPitch = endPitch;
+
+    // If camera is currently outside on the road (z > 0.6), play the smooth Walk-In Glide!
+    if (this.camera.position.z > 0.6) {
+      this.exploreMode = false;
+      this.walkIn = {
+        t: 0,
+        duration: 2.25,
+        p0: this.camera.position.clone(),
+        p1: new THREE.Vector3(0.32, 1.56, 3.65), // Glides smoothly across road, over turf mat & through shutter!
+        p2: endPos.clone(),
+        l0: this.currentCamTarget.clone(),
+        l1: new THREE.Vector3(0.05, 1.32, -2.05), // Looks straight through doorway into glowing shop
+        l2: endLook.clone(),
+      };
+    } else {
+      this.walkIn = null;
+      this.exploreMode = true;
+    }
   }
 
   /**
    * Smoothly rotates & steps along the central turf aisle to frame any chosen 3D section!
    */
   focusSection(sectionId) {
+    if (this.walkIn) {
+      // Finish any in-progress walk-in smoothly into explore mode before focusing
+      this.walkIn = null;
+      this.standPos.copy(this.camera.position);
+      this.exploreMode = true;
+    }
     if (!this.exploreMode) this.enterExploreMode();
+    if (this.walkIn) {
+      this.walkIn = null;
+      this.standPos.copy(this.targetStandPos);
+      this.exploreMode = true;
+    }
     this.activeSectionId = sectionId;
 
     const spots = {
@@ -865,7 +912,32 @@ export class ShowroomStage {
       }
     }
 
-    if (this.exploreMode) {
+    if (this.walkIn) {
+      // Smooth 2.15s quadratic Bezier walk-in glide across the road & through the lifted shutter!
+      const w = this.walkIn;
+      w.t = Math.min(1, w.t + dt / w.duration);
+      const s = w.t * w.t * (3 - 2 * w.t); // Smoothstep ease-in-out
+      const inv = 1 - s;
+
+      this.camera.position.set(
+        inv * inv * w.p0.x + 2 * inv * s * w.p1.x + s * s * w.p2.x,
+        inv * inv * w.p0.y + 2 * inv * s * w.p1.y + s * s * w.p2.y,
+        inv * inv * w.p0.z + 2 * inv * s * w.p1.z + s * s * w.p2.z
+      );
+      this.currentCamTarget.set(
+        inv * inv * w.l0.x + 2 * inv * s * w.l1.x + s * s * w.l2.x,
+        inv * inv * w.l0.y + 2 * inv * s * w.l1.y + s * s * w.l2.y,
+        inv * inv * w.l0.z + 2 * inv * s * w.l1.z + s * s * w.l2.z
+      );
+      this.camera.lookAt(this.currentCamTarget);
+
+      if (w.t >= 1) {
+        this.walkIn = null;
+        this.standPos.copy(this.camera.position);
+        this.targetStandPos.copy(this.camera.position);
+        this.exploreMode = true;
+      }
+    } else if (this.exploreMode) {
       if (!this._isDragging && Math.abs(this.velYaw) > 0.0001) {
         this.targetYaw += this.velYaw;
         this.velYaw *= Math.pow(0.88, dt * 60);
@@ -888,6 +960,11 @@ export class ShowroomStage {
       this.camera.position.lerp(this.desiredCamPos, Math.min(1, dt * 6));
       this.currentCamTarget.lerp(this.desiredCamTarget, Math.min(1, dt * 6));
       this.camera.lookAt(this.currentCamTarget);
+    }
+
+    // Live Kadapa road vehicles & spinning wheels (only needs updating while near/outside!)
+    if (this.streetTraffic) {
+      this.streetTraffic.update(dt);
     }
 
     // Subtle backlit highlight on hovered or active 3D Wall Sign

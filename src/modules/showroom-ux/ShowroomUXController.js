@@ -379,17 +379,17 @@ export class ShowroomUXController {
 
     if (nextPhase === 'onboarding') {
       this.onStageChange?.({
-        camPos: [0.55, 1.78, 9.8],
-        camTarget: [0.65, 1.65, 1.35],
+        camPos: [0.55, 2.05, 13.6],
+        camTarget: [0.35, 1.38, 1.8],
         shutterOpen: 0,
         mascot: { pos: [0.45, 0, 1.92], rotY: -0.06, anim: 'idle' },
       });
     } else if (nextPhase === 'welcome') {
       this.onStageChange?.({
-        camPos: [0.28, 1.56, 5.4],
-        camTarget: [0.18, 1.46, -1.85],
+        camPos: [0.38, 1.82, 11.4],
+        camTarget: [0.18, 1.28, 0.4],
         shutterOpen: 1,
-        mascot: { pos: [0.48, 0, 1.35], rotY: -0.1, anim: 'greet' },
+        mascot: { pos: [0.48, 0, 1.55], rotY: -0.08, anim: 'greet' },
       });
     } else if (nextPhase === 'inside') {
       this.onEnterExplore?.();
