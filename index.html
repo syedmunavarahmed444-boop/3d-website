@@ -151,19 +151,34 @@
       Mansoor at Front-Left Counter · Hover or tap any product
     </div>
 
-    <aside id="floating-catalog" class="floating-catalog" hidden aria-label="Products and Prices">
+    <aside id="floating-catalog" class="floating-catalog" hidden aria-label="Products, Services and Prices">
       <div class="panel-header">
-        <div class="panel-tabs">
-          <button id="panel-tab-catalog" type="button" class="panel-tab is-active">Products &amp; Prices</button>
+        <div class="panel-tabs is-three">
+          <button id="panel-tab-catalog" type="button" class="panel-tab is-active">Products</button>
+          <button id="panel-tab-services" type="button" class="panel-tab">Services</button>
           <button id="panel-tab-bag" type="button" class="panel-tab">Kit Bag (0)</button>
         </div>
+
+        <div id="catalog-search-wrap" class="catalog-search-wrap">
+          <span class="search-icon" aria-hidden="true">⌕</span>
+          <input
+            id="catalog-search-input"
+            type="search"
+            class="catalog-search-input"
+            placeholder="Search bats, nets, shuttles, courts, trophies…"
+            autocomplete="off"
+          />
+          <button id="catalog-search-clear" type="button" class="search-clear-btn" hidden aria-label="Clear search">✕</button>
+        </div>
+
         <div class="panel-hint-row">
-          <span id="panel-subtitle" class="panel-subtitle">Hover or click any item to view it in 3D</span>
+          <span id="panel-subtitle" class="panel-subtitle">Hover or tap any item to view it in 3D</span>
           <button id="back-to-counter-btn" type="button" class="back-counter-btn" hidden>← Counter</button>
         </div>
       </div>
 
       <div id="catalog-scroll-list" class="catalog-scroll-list"></div>
+      <div id="services-scroll-list" class="catalog-scroll-list" hidden></div>
       <div id="bag-checkout-view" class="bag-checkout-view" hidden></div>
 
       <footer class="panel-footer">

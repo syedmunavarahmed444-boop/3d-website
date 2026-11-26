@@ -504,8 +504,150 @@ body {
   gap: 6px;
   padding: 4px;
   border-radius: 12px;
-  background: rgba(255, 255, 255, 0.06);
+  background: rgba(255, 255, 255, 0.08);
   margin-bottom: 10px;
+}
+
+.panel-tabs.is-three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.catalog-search-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 8px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 11px;
+  font-size: 0.95rem;
+  color: var(--gold);
+  pointer-events: none;
+}
+
+.catalog-search-input {
+  width: 100%;
+  padding: 8px 32px 8px 30px;
+  border-radius: 11px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: rgba(5, 18, 13, 0.42);
+  color: var(--cream);
+  font-family: inherit;
+  font-size: 0.8rem;
+  outline: none;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.catalog-search-input::placeholder {
+  color: rgba(212, 227, 219, 0.72);
+}
+
+.catalog-search-input:focus {
+  border-color: var(--gold);
+  background: rgba(5, 18, 13, 0.62);
+}
+
+.search-clear-btn {
+  position: absolute;
+  right: 8px;
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  color: var(--cream);
+  font-size: 0.72rem;
+  cursor: pointer;
+}
+
+/* Services Cards & Search Empty State */
+.fx-service-card {
+  border-radius: 16px;
+  padding: 13px 14px;
+  background: rgba(6, 20, 15, 0.38);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.fx-service-badge {
+  align-self: flex-start;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  color: #071913;
+  background: var(--gold);
+  border-radius: 6px;
+  padding: 2px 7px;
+}
+
+.fx-service-title {
+  margin: 2px 0 0;
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: var(--cream);
+  text-shadow: 0 1px 4px rgba(0, 0, 0, 0.55);
+}
+
+.fx-service-sub {
+  margin: 0;
+  font-size: 0.76rem;
+  color: var(--muted);
+  line-height: 1.4;
+}
+
+.fx-service-list {
+  margin: 2px 0 4px;
+  padding-left: 16px;
+  font-size: 0.74rem;
+  color: var(--cream);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.fx-service-cta {
+  display: block;
+  text-align: center;
+  padding: 8px 12px;
+  border-radius: 10px;
+  border: 1px solid rgba(232, 180, 72, 0.55);
+  background: rgba(232, 180, 72, 0.16);
+  color: var(--gold);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background 0.18s ease, color 0.18s ease;
+}
+
+.fx-service-cta:hover {
+  background: var(--gold);
+  color: #071913;
+}
+
+.fx-service-banner,
+.fx-search-empty {
+  border-radius: 16px;
+  padding: 14px;
+  background: rgba(6, 20, 15, 0.45);
+  border: 1px dashed rgba(232, 180, 72, 0.48);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: center;
+  font-size: 0.78rem;
+  color: var(--muted);
+}
+
+.fx-service-banner strong,
+.fx-search-empty-title {
+  font-size: 0.88rem;
+  font-weight: 800;
+  color: var(--cream);
 }
 
 .panel-tab {

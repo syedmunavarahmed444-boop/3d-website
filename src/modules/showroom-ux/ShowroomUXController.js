@@ -1,5 +1,5 @@
 import QRCode from 'qrcode';
-import { BRAND, PRODUCTS } from '../brand/storeData.js';
+import { BRAND, PRODUCTS, SERVICES } from '../brand/storeData.js';
 
 function formatInr(amount) {
   return `₹${amount.toLocaleString('en-IN')}`;
@@ -23,7 +23,8 @@ export class ShowroomUXController {
 
     this.phase = 'onboarding'; // 'onboarding' | 'welcome' | 'inside'
     this.authTab = 'signup'; // 'signup' | 'login'
-    this.insideTab = 'catalog'; // 'catalog' | 'bag'
+    this.insideTab = 'catalog'; // 'catalog' | 'services' | 'bag'
+    this.searchQuery = '';
     this.selectedProductId = null;
     this.hoveredProductId = null;
     this._hoverTimer = null;
@@ -41,6 +42,7 @@ export class ShowroomUXController {
 
     this.cart.subscribe((summary) => this._onCartUpdate(summary));
     this._renderCatalogList();
+    this._renderServicesList();
 
     // Always start on the onboarding gate unless the user just signed in this session
     this.setPhase('onboarding');
@@ -72,10 +74,15 @@ export class ShowroomUXController {
 
     this.floatingPanel = document.getElementById('floating-catalog');
     this.panelTabCatalog = document.getElementById('panel-tab-catalog');
+    this.panelTabServices = document.getElementById('panel-tab-services');
     this.panelTabBag = document.getElementById('panel-tab-bag');
+    this.searchWrap = document.getElementById('catalog-search-wrap');
+    this.searchInput = document.getElementById('catalog-search-input');
+    this.searchClearBtn = document.getElementById('catalog-search-clear');
     this.panelSubtitle = document.getElementById('panel-subtitle');
     this.backToCounterBtn = document.getElementById('back-to-counter-btn');
     this.catalogScroll = document.getElementById('catalog-scroll-list');
+    this.servicesScroll = document.getElementById('services-scroll-list');
     this.bagView = document.getElementById('bag-checkout-view');
     this.panelFooterSummary = document.getElementById('panel-footer-summary');
     this.panelWaBtn = document.getElementById('panel-wa-btn');
@@ -170,7 +177,33 @@ export class ShowroomUXController {
 
   _bindFloatingPanel() {
     this.panelTabCatalog?.addEventListener('click', () => this._setInsideTab('catalog'));
+    this.panelTabServices?.addEventListener('click', () => this._setInsideTab('services'));
     this.panelTabBag?.addEventListener('click', () => this._setInsideTab('bag'));
+
+    // Live search across Products & Services
+    this.searchInput?.addEventListener('input', () => {
+      this.searchQuery = this.searchInput.value.trim();
+      if (this.searchClearBtn) {
+        this.searchClearBtn.hidden = !this.searchQuery;
+      }
+      if (this.insideTab === 'services') {
+        this._renderServicesList();
+      } else {
+        if (this.insideTab !== 'catalog') this._setInsideTab('catalog');
+        this._renderCatalogList();
+      }
+    });
+
+    this.searchClearBtn?.addEventListener('click', () => {
+      if (this.searchInput) {
+        this.searchInput.value = '';
+        this.searchInput.focus();
+      }
+      this.searchQuery = '';
+      if (this.searchClearBtn) this.searchClearBtn.hidden = true;
+      this._renderCatalogList();
+      this._renderServicesList();
+    });
 
     this.backToCounterBtn?.addEventListener('click', () => {
       this.selectedProductId = null;
@@ -273,12 +306,34 @@ export class ShowroomUXController {
   _setInsideTab(tab) {
     this.insideTab = tab;
     const isCatalog = tab === 'catalog';
+    const isServices = tab === 'services';
+    const isBag = tab === 'bag';
+
     this.panelTabCatalog?.classList.toggle('is-active', isCatalog);
-    this.panelTabBag?.classList.toggle('is-active', !isCatalog);
+    this.panelTabServices?.classList.toggle('is-active', isServices);
+    this.panelTabBag?.classList.toggle('is-active', isBag);
+
+    if (this.searchWrap) this.searchWrap.hidden = isBag;
     if (this.catalogScroll) this.catalogScroll.hidden = !isCatalog;
-    if (this.bagView) this.bagView.hidden = isCatalog;
-    if (!isCatalog) {
+    if (this.servicesScroll) this.servicesScroll.hidden = !isServices;
+    if (this.bagView) this.bagView.hidden = !isBag;
+
+    if (this.panelSubtitle) {
+      if (isServices) {
+        this.panelSubtitle.textContent = 'Play areas, turf nets, courts & turnkey sports builds';
+      } else if (isBag) {
+        this.panelSubtitle.textContent = 'Review your Kit Bag & send straight to WhatsApp';
+      } else {
+        this.panelSubtitle.textContent = 'Hover or tap any item to view it in 3D';
+      }
+    }
+
+    if (isServices) {
+      this._renderServicesList();
+    } else if (isBag) {
       this._renderBagView(this.cart.getSummary());
+    } else {
+      this._renderCatalogList();
     }
     this._emitCameraForCurrentView();
   }
@@ -387,9 +442,53 @@ export class ShowroomUXController {
     });
   }
 
+  _buildCustomWhatsAppUrl(message) {
+    const visitor = this.onboarding.getVisitor();
+    const customerTag =
+      visitor && visitor.name && visitor.name !== 'Guest'
+        ? `\nCustomer: ${visitor.name}${visitor.phone ? ` (${visitor.phone})` : ''}`
+        : '';
+    const primaryPhone = BRAND.phones[0].raw;
+    return `https://wa.me/91${primaryPhone}?text=${encodeURIComponent(`${message}${customerTag}`)}`;
+  }
+
   _renderCatalogList() {
     if (!this.catalogScroll) return;
-    this.catalogScroll.innerHTML = PRODUCTS.map((prod) => {
+    const q = this.searchQuery.toLowerCase();
+    const filtered = q
+      ? PRODUCTS.filter((prod) => {
+          const hay = [
+            prod.name,
+            prod.subtitle,
+            prod.shortTab,
+            prod.index,
+            ...(prod.packs || []).map((p) => p.label),
+          ]
+            .join(' ')
+            .toLowerCase();
+          return hay.includes(q);
+        })
+      : PRODUCTS;
+
+    if (filtered.length === 0) {
+      const askUrl = this._buildCustomWhatsAppUrl(
+        `Hello ${BRAND.whatsappGreetingName || BRAND.owner} (${BRAND.name})! I searched for "${this.searchQuery}" on your 3D Showroom. Do you have it in stock?`
+      );
+      this.catalogScroll.innerHTML = `
+        <div class="fx-search-empty">
+          <div class="fx-search-empty-title">We stock almost everything in sports!</div>
+          <p class="fx-bag-hint">
+            "<strong>${this.searchQuery}</strong>" isn't in our quick preview list yet, but we likely have it in-store or can source it wholesale.
+          </p>
+          <a href="${askUrl}" target="_blank" rel="noopener noreferrer" class="fx-wa-btn">
+            Ask Mansoor for "${this.searchQuery}" on WhatsApp →
+          </a>
+        </div>
+      `;
+      return;
+    }
+
+    this.catalogScroll.innerHTML = filtered.map((prod) => {
       const packsHtml = prod.packs
         .map((pack, idx) => {
           const qty = this.cart.getQty(prod.id, idx);
@@ -449,6 +548,55 @@ export class ShowroomUXController {
         </article>
       `;
     }).join('');
+    this._syncCardStates();
+  }
+
+  _renderServicesList() {
+    if (!this.servicesScroll) return;
+    const q = this.searchQuery.toLowerCase();
+    const filtered = q
+      ? SERVICES.filter((svc) =>
+          [svc.badge, svc.name, svc.subtitle, ...(svc.highlights || [])].join(' ').toLowerCase().includes(q)
+        )
+      : SERVICES;
+
+    const customQuoteUrl = this._buildCustomWhatsAppUrl(
+      `Hello ${BRAND.whatsappGreetingName || BRAND.owner} (${BRAND.name})! I would like a quote for a custom sports court / play area project.`
+    );
+
+    const cardsHtml = filtered
+      .map((svc) => {
+        const waUrl = this._buildCustomWhatsAppUrl(
+          `Hello ${BRAND.whatsappGreetingName || BRAND.owner} (${BRAND.name})! I'm interested in your "${svc.name}" service. Please share details & site visit availability.`
+        );
+        const points = (svc.highlights || []).map((h) => `<li>${h}</li>`).join('');
+        return `
+          <article class="fx-service-card">
+            <span class="fx-service-badge">${svc.badge}</span>
+            <h3 class="fx-service-title">${svc.name}</h3>
+            <p class="fx-service-sub">${svc.subtitle}</p>
+            <ul class="fx-service-list">${points}</ul>
+            <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="fx-service-cta">
+              Get Free Quote on WhatsApp →
+            </a>
+          </article>
+        `;
+      })
+      .join('');
+
+    this.servicesScroll.innerHTML =
+      (cardsHtml ||
+        `<div class="fx-search-empty">
+          <div class="fx-search-empty-title">Custom Sports Infrastructure</div>
+          <p class="fx-bag-hint">We build cricket nets, badminton &amp; volleyball courts, turf arenas, and school grounds across Kadapa &amp; AP.</p>
+        </div>`) +
+      `<div class="fx-service-banner">
+        <strong>Planning a custom play area or academy?</strong>
+        <span>Tell us your dimensions and sport—we handle netting, turf, flooring, poles &amp; lighting end-to-end.</span>
+        <a href="${customQuoteUrl}" target="_blank" rel="noopener noreferrer" class="fx-wa-btn">
+          Discuss Custom Project on WhatsApp →
+        </a>
+      </div>`;
   }
 
   _syncCardStates() {

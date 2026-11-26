@@ -191,6 +191,44 @@ export const PRODUCTS = [
   },
 ];
 
+export const SERVICES = [
+  {
+    id: 'cricket-nets',
+    badge: 'TURF & NETS',
+    name: 'Box Cricket & Practice Nets',
+    subtitle: 'Full box-cricket arenas, practice pitches, UV-stabilized nylon nets, artificial turf & LED floodlights.',
+    highlights: ['Heavy-duty GI frame & cage netting', 'High-density green turf & bowling mats', 'Turnkey Kadapa & AP site installation'],
+  },
+  {
+    id: 'badminton-courts',
+    badge: 'INDOOR COURTS',
+    name: 'Badminton Court Construction',
+    subtitle: 'BWF-style PVC vinyl mat or wooden flooring, tournament poles, nets & glare-free court lighting.',
+    highlights: ['Anti-skid 4.5mm–7mm synthetic court mats', 'Precision line marking & pole sockets', 'Club, apartment & academy builds'],
+  },
+  {
+    id: 'volleyball-multi-courts',
+    badge: 'OUTDOOR COURTS',
+    name: 'Volleyball, Basketball & Multi-Sport Courts',
+    subtitle: 'Complete outdoor/indoor courts with acrylic cushioning, heavy poles, hoops, nets & perimeter fencing.',
+    highlights: ['Volleyball, basketball & throwball courts', 'Weather-proof acrylic or turf surfacing', 'Chain-link & nylon ball-stop fencing'],
+  },
+  {
+    id: 'school-grounds',
+    badge: 'INSTITUTIONS',
+    name: 'School, College & Club Ground Setup',
+    subtitle: 'End-to-end sports room stocking, football goal posts, athletics gear & annual tournament kits.',
+    highlights: ['Wholesale institutional & GST billing', 'Custom team jerseys & 22k gold trophies', 'Same-day Kadapa delivery & setup'],
+  },
+  {
+    id: 'repair-stringing',
+    badge: 'IN-STORE WORKSHOP',
+    name: 'Bat Knocking, Grip & Racket Stringing',
+    subtitle: 'Professional badminton/tennis gutting, willow bat knocking, threading, toe-guards & handle repairs.',
+    highlights: ['Digital tension badminton stringing', 'Hand/machine willow bat knocking & oiling', 'Express turnaround at Apsara Circle'],
+  },
+];
+
 export const CHAPTERS = [
   {
     id: 'opening',
