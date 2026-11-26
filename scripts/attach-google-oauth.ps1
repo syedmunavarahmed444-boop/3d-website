@@ -89,6 +89,7 @@ $clientObj = $clientJson | ConvertFrom-Json
 $clientObj.PSObject.Properties.Remove("ClientSecret")
 $clientObj.PSObject.Properties.Remove("CreationDate")
 $clientObj.PSObject.Properties.Remove("LastModifiedDate")
+$clientObj.PSObject.Properties.Remove("ClientType")
 $clientObj.SupportedIdentityProviders = @("COGNITO", "Google")
 
 $clientFile = "$PWD\$TempDir\client_updated.json"
