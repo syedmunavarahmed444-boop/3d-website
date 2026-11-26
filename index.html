@@ -15,7 +15,7 @@
     <meta property="og:title" content="Sultan Sports Kadapa · 3D Walk-In Sports Showroom" />
     <meta
       property="og:description"
-      content="Walk inside Sultan Sports Kadapa at Apsara Circle! Browse Retail &amp; Wholesale prices on Willow &amp; M4 Scoop Bats, Cricket Kits, Badminton, Footballs, Jerseys &amp; Trophies—send your order straight to WhatsApp."
+      content="Walk inside Sultan Sports Kadapa at Apsara Circle! Swipe around our 3D showroom, tap any sports rack for Retail &amp; Wholesale prices, and send your order straight to WhatsApp."
     />
     <meta property="og:image" content="https://dfrehykajewwr.cloudfront.net/brand/og-share.png" />
     <meta name="twitter:card" content="summary_large_image" />
@@ -79,27 +79,82 @@
       <div id="loader-pct" class="loader-pct">0%</div>
     </div>
 
-    <!-- Full-Bleed 3D Showroom Canvas -->
+    <!-- Full-Bleed Interactive 360° 3D Showroom Canvas -->
     <canvas id="webgl-stage" class="webgl-stage" aria-label="Sultan Sports 3D Showroom"></canvas>
 
-    <!-- Persistent Top Bar -->
+    <!-- All Controls & Search Icon Tucked Compactly at the Top Side -->
     <header id="topbar" class="topbar">
-      <div class="brand-lockup">
-        <div class="brand-seal">
-          <img src="/brand/sultan_emblem.png" alt="Sultan Sports Logo" />
+      <div class="topbar-main">
+        <div class="brand-lockup">
+          <div class="brand-seal">
+            <img src="/brand/sultan_emblem.png" alt="Sultan Sports Logo" />
+          </div>
+          <span class="brand-name">SULTAN SPORTS</span>
         </div>
-        <div>
-          <div class="brand-name">SULTAN SPORTS KADAPA</div>
-          <div class="brand-sub">Retail &amp; Wholesale · Apsara Circle</div>
+
+        <div class="topbar-actions">
+          <button
+            id="top-search-btn"
+            type="button"
+            class="top-icon-btn"
+            aria-label="Search items and catalog"
+            title="Search items"
+            hidden
+          >
+            ⌕
+          </button>
+          <button
+            id="top-services-btn"
+            type="button"
+            class="top-pill-btn"
+            title="Cricket nets, badminton &amp; volleyball courts"
+            hidden
+          >
+            Services
+          </button>
+          <a href="tel:+919110744845" class="top-icon-btn" aria-label="Call Sultan Sports" title="Call +91 91107 44845">
+            ✆
+          </a>
+          <button
+            id="signout-btn"
+            type="button"
+            class="top-icon-btn"
+            aria-label="Switch user"
+            title="Switch user"
+            hidden
+          >
+            👤
+          </button>
+          <button id="kitbag-open-btn" type="button" class="kitbag-pill" title="Open Kit Bag &amp; WhatsApp Order">
+            👜 0
+          </button>
         </div>
       </div>
-      <div class="topbar-right">
-        <span id="visitor-badge" class="visitor-pill" hidden>Hi, Guest</span>
-        <a href="tel:+919110744845" class="call-pill">✆ Call</a>
-        <button id="signout-btn" type="button" class="ghost-pill" hidden>Switch User</button>
-        <button id="kitbag-open-btn" type="button" class="kitbag-pill">Kit Bag · 0</button>
-      </div>
+
+      <!-- Ultra-Slim Top Section Strip (Tap to jump to any wall or swipe freely in 3D!) -->
+      <nav id="top-section-strip" class="top-section-strip" aria-label="Showroom Sections" hidden></nav>
     </header>
+
+    <!-- Top-Anchored Compact Glass Popover (Opens for Search, Services, or Kit Bag) -->
+    <section id="top-popover" class="top-popover" hidden aria-label="Showroom Menu">
+      <div class="popover-head">
+        <span id="popover-title" class="popover-title">Search All Sports Gear</span>
+        <button id="popover-close-btn" type="button" class="mini-close-btn" aria-label="Close">✕</button>
+      </div>
+
+      <div id="popover-search-box" class="popover-search-box">
+        <span class="search-icon" aria-hidden="true">⌕</span>
+        <input
+          id="catalog-search-input"
+          type="search"
+          class="catalog-search-input"
+          placeholder="Search bats, nets, shuttles, courts, trophies…"
+          autocomplete="off"
+        />
+      </div>
+
+      <div id="popover-body" class="popover-body"></div>
+    </section>
 
     <!-- STAGE 1: Generic Onboarding / Signup-Login Gate -->
     <section id="onboarding-gate" class="onboarding-gate" aria-label="Welcome Sign Up and Sign In">
@@ -107,7 +162,7 @@
         <span class="auth-badge">APSARA CIRCLE, KADAPA · 4.9 ★</span>
         <h1 class="auth-title">Welcome to Sultan Sports</h1>
         <p class="auth-desc">
-          Sign up or sign in to open our 3D showroom shutter, browse live Retail &amp; Wholesale racks, and send orders straight to WhatsApp.
+          Sign up or sign in to lift our 3D showroom shutter, swipe freely around every section, and tap any 3D item for Retail &amp; Wholesale prices.
         </p>
 
         <div class="auth-tabs" role="tablist">
@@ -139,57 +194,22 @@
       <div class="welcome-eyebrow">SHUTTER OPEN · MANSOOR WELCOMES YOU</div>
       <h2 id="welcome-greeting" class="welcome-title">Welcome to Sultan Sports!</h2>
       <p class="welcome-sub">
-        The shutter is up—step inside with Mansoor to explore all 7 Retail &amp; Wholesale sports racks.
+        Step inside to swipe around the whole 3D shop and tap any sports item on the shelves.
       </p>
       <button id="step-inside-btn" type="button" class="step-inside-btn">
         Step Inside the Shop →
       </button>
     </section>
 
-    <!-- STAGE 3: Live 3D Rack Indicator + Floating Product & Price List beside Mansoor -->
-    <div id="live-spot-badge" class="live-spot-badge" hidden>
-      Mansoor at Front-Left Counter · Hover or tap any product
+    <!-- Subtle Free-Roam Gesture Hint (Fades away once user swipes or taps) -->
+    <div id="roam-hint" class="roam-hint" hidden>
+      ⇋ Swipe around the 3D shop · Tap any shelf or wall sign for prices
     </div>
 
-    <aside id="floating-catalog" class="floating-catalog" hidden aria-label="Products, Services and Prices">
-      <div class="panel-header">
-        <div class="panel-tabs is-three">
-          <button id="panel-tab-catalog" type="button" class="panel-tab is-active">Products</button>
-          <button id="panel-tab-services" type="button" class="panel-tab">Services</button>
-          <button id="panel-tab-bag" type="button" class="panel-tab">Kit Bag (0)</button>
-        </div>
+    <!-- Compact Glassmorphic 3D Object Detail Window (Opens ONLY when clicking a 3D rack/wall sign!) -->
+    <aside id="object-popup" class="object-popup" hidden aria-label="Selected Product Details"></aside>
 
-        <div id="catalog-search-wrap" class="catalog-search-wrap">
-          <span class="search-icon" aria-hidden="true">⌕</span>
-          <input
-            id="catalog-search-input"
-            type="search"
-            class="catalog-search-input"
-            placeholder="Search bats, nets, shuttles, courts, trophies…"
-            autocomplete="off"
-          />
-          <button id="catalog-search-clear" type="button" class="search-clear-btn" hidden aria-label="Clear search">✕</button>
-        </div>
-
-        <div class="panel-hint-row">
-          <span id="panel-subtitle" class="panel-subtitle">Hover or tap any item to view it in 3D</span>
-          <button id="back-to-counter-btn" type="button" class="back-counter-btn" hidden>← Counter</button>
-        </div>
-      </div>
-
-      <div id="catalog-scroll-list" class="catalog-scroll-list"></div>
-      <div id="services-scroll-list" class="catalog-scroll-list" hidden></div>
-      <div id="bag-checkout-view" class="bag-checkout-view" hidden></div>
-
-      <footer class="panel-footer">
-        <div id="panel-footer-summary" class="panel-footer-summary">Tap + on any pack to build your order</div>
-        <a id="panel-wa-btn" href="https://wa.me/919110744845" target="_blank" rel="noopener noreferrer" class="fx-wa-btn">
-          Send Order on WhatsApp →
-        </a>
-      </footer>
-    </aside>
-
-    <!-- Swipeable Product Photo Stack Modal (Opens when clicking any product photo) -->
+    <!-- Swipeable Product Photo Stack Modal (Opens when clicking the product photo) -->
     <section
       id="photo-stack-modal"
       class="photo-stack-modal"

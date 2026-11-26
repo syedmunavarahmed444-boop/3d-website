@@ -16,6 +16,12 @@ const ux = new ShowroomUXController({
   onStageChange(stageState) {
     stage?.applyStoryState(stageState);
   },
+  onEnterExplore() {
+    stage?.enterExploreMode();
+  },
+  onFocusSection(sectionId) {
+    stage?.focusSection(sectionId);
+  },
 });
 
 stage = new ShowroomStage(canvas, {
@@ -29,7 +35,12 @@ stage = new ShowroomStage(canvas, {
   onError() {
     ux.hideLoader();
   },
+  onSelectSection(sectionId) {
+    ux.handle3DSectionClick(sectionId);
+  },
+  onUserSwipe() {
+    ux.dismissRoamHint();
+  },
 });
 
-// Push initial onboarding camera & closed shutter state right away
 ux.setPhase('onboarding');

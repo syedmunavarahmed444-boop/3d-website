@@ -6,45 +6,40 @@ function formatInr(amount) {
 }
 
 /**
- * Interactive 3D Showroom UX Controller (Branch: neon-new-ux)
+ * Interactive 360° Free-Roam Showroom UX Controller
  *
- * Flow:
- * 1. `onboarding` -> Generic Sign Up / Log In / Guest gate outside the closed shutter.
- * 2. `welcome`    -> Shutter automatically lifts + Mansoor waves + big "Step Inside" button.
- * 3. `inside`     -> Camera & Mansoor move inside by the counter; floating product & price list
- *                    pops up beside Mansoor; hovering or clicking any product glides the 3D shop
- *                    around in the background to showcase that exact rack.
+ * - Top bar holds all compact controls: Search icon (⌕), Services, Call (✆), Switch User, Kit Bag (👜).
+ * - Inside the shop, 100% of the viewport is open for swiping around every 3D corner & reading wall signs.
+ * - Clicking/tapping any 3D object or wall sign opens a small, compact glassmorphic popup card with
+ *   product photo stack trigger, description, and Retail/Wholesale pack steppers.
  */
 export class ShowroomUXController {
-  constructor({ onboarding, cart, onStageChange }) {
+  constructor({ onboarding, cart, onStageChange, onEnterExplore, onFocusSection }) {
     this.onboarding = onboarding;
     this.cart = cart;
     this.onStageChange = onStageChange;
+    this.onEnterExplore = onEnterExplore;
+    this.onFocusSection = onFocusSection;
 
     this.phase = 'onboarding'; // 'onboarding' | 'welcome' | 'inside'
-    this.authTab = 'signup'; // 'signup' | 'login'
-    this.insideTab = 'catalog'; // 'catalog' | 'services' | 'bag'
+    this.authTab = 'signup';
+    this.activeSectionId = null; // Currently opened 3D product popup
+    this.popoverMode = null; // null | 'search' | 'services' | 'bag'
     this.searchQuery = '';
-    this.selectedProductId = null;
-    this.hoveredProductId = null;
-    this._hoverTimer = null;
 
-    // Swipeable photo stack gallery state
+    // Swipeable 3D photo stack state
     this.stackProduct = null;
     this.stackIndex = 0;
 
     this._cacheElements();
+    this._renderSectionStrip();
     this._bindOnboarding();
     this._bindWelcome();
-    this._bindTopbar();
-    this._bindFloatingPanel();
+    this._bindTopbarAndPopover();
+    this._bindObjectPopup();
     this._bindPhotoStack();
 
     this.cart.subscribe((summary) => this._onCartUpdate(summary));
-    this._renderCatalogList();
-    this._renderServicesList();
-
-    // Always start on the onboarding gate unless the user just signed in this session
     this.setPhase('onboarding');
   }
 
@@ -53,10 +48,18 @@ export class ShowroomUXController {
     this.loaderBar = document.getElementById('loader-bar');
     this.loaderPct = document.getElementById('loader-pct');
 
-    this.topbar = document.getElementById('topbar');
-    this.visitorBadge = document.getElementById('visitor-badge');
+    this.topSearchBtn = document.getElementById('top-search-btn');
+    this.topServicesBtn = document.getElementById('top-services-btn');
     this.signOutBtn = document.getElementById('signout-btn');
     this.kitBagBtn = document.getElementById('kitbag-open-btn');
+    this.sectionStrip = document.getElementById('top-section-strip');
+
+    this.topPopover = document.getElementById('top-popover');
+    this.popoverTitle = document.getElementById('popover-title');
+    this.popoverCloseBtn = document.getElementById('popover-close-btn');
+    this.popoverSearchBox = document.getElementById('popover-search-box');
+    this.searchInput = document.getElementById('catalog-search-input');
+    this.popoverBody = document.getElementById('popover-body');
 
     this.onboardingGate = document.getElementById('onboarding-gate');
     this.authTabSignup = document.getElementById('auth-tab-signup');
@@ -72,24 +75,10 @@ export class ShowroomUXController {
     this.welcomeGreeting = document.getElementById('welcome-greeting');
     this.stepInsideBtn = document.getElementById('step-inside-btn');
 
-    this.floatingPanel = document.getElementById('floating-catalog');
-    this.panelTabCatalog = document.getElementById('panel-tab-catalog');
-    this.panelTabServices = document.getElementById('panel-tab-services');
-    this.panelTabBag = document.getElementById('panel-tab-bag');
-    this.searchWrap = document.getElementById('catalog-search-wrap');
-    this.searchInput = document.getElementById('catalog-search-input');
-    this.searchClearBtn = document.getElementById('catalog-search-clear');
-    this.panelSubtitle = document.getElementById('panel-subtitle');
-    this.backToCounterBtn = document.getElementById('back-to-counter-btn');
-    this.catalogScroll = document.getElementById('catalog-scroll-list');
-    this.servicesScroll = document.getElementById('services-scroll-list');
-    this.bagView = document.getElementById('bag-checkout-view');
-    this.panelFooterSummary = document.getElementById('panel-footer-summary');
-    this.panelWaBtn = document.getElementById('panel-wa-btn');
+    this.roamHint = document.getElementById('roam-hint');
+    this.objectPopup = document.getElementById('object-popup');
 
-    this.liveSpotBadge = document.getElementById('live-spot-badge');
-
-    // Photo stack modal elements
+    // Photo stack modal
     this.stackModal = document.getElementById('photo-stack-modal');
     this.stackBadge = document.getElementById('stack-cat-badge');
     this.stackTitle = document.getElementById('stack-title');
@@ -111,9 +100,43 @@ export class ShowroomUXController {
   hideLoader() {
     if (!this.loader) return;
     this.loader.classList.add('is-hidden');
-    window.setTimeout(() => {
-      this.loader?.remove();
-    }, 600);
+    window.setTimeout(() => this.loader?.remove(), 600);
+  }
+
+  dismissRoamHint() {
+    if (this.roamHint && !this.roamHint.hidden) {
+      this.roamHint.classList.add('is-fading');
+      window.setTimeout(() => {
+        if (this.roamHint) this.roamHint.hidden = true;
+      }, 320);
+    }
+  }
+
+  _renderSectionStrip() {
+    if (!this.sectionStrip) return;
+    const pills = [
+      `<button type="button" class="sec-chip" data-sec="__counter">Counter</button>`,
+      ...PRODUCTS.map(
+        (p) => `<button type="button" class="sec-chip" data-sec="${p.id}">${p.index} ${p.shortTab}</button>`
+      ),
+    ];
+    this.sectionStrip.innerHTML = pills.join('');
+
+    this.sectionStrip.addEventListener('click', (e) => {
+      const chip = e.target.closest('button[data-sec]');
+      if (!chip) return;
+      const secId = chip.dataset.sec;
+      this.dismissRoamHint();
+      this.onFocusSection?.(secId);
+      this.handle3DSectionClick(secId);
+    });
+  }
+
+  _syncSectionChips() {
+    if (!this.sectionStrip) return;
+    this.sectionStrip.querySelectorAll('.sec-chip').forEach((btn) => {
+      btn.classList.toggle('is-active', btn.dataset.sec === this.activeSectionId);
+    });
   }
 
   _bindOnboarding() {
@@ -143,9 +166,7 @@ export class ShowroomUXController {
     const isSignup = tab === 'signup';
     this.authTabSignup?.classList.toggle('is-active', isSignup);
     this.authTabLogin?.classList.toggle('is-active', !isSignup);
-    if (this.authNameField) {
-      this.authNameField.hidden = !isSignup;
-    }
+    if (this.authNameField) this.authNameField.hidden = !isSignup;
     if (this.authSubmitBtn) {
       this.authSubmitBtn.textContent = isSignup ? 'Create Free Pass & Open Shutter →' : 'Sign In & Open Shutter →';
     }
@@ -157,13 +178,13 @@ export class ShowroomUXController {
     });
   }
 
-  _bindTopbar() {
-    this.signOutBtn?.addEventListener('click', () => {
-      this.onboarding.signOut();
-      this.selectedProductId = null;
-      this.hoveredProductId = null;
-      this.insideTab = 'catalog';
-      this.setPhase('onboarding');
+  _bindTopbarAndPopover() {
+    this.topSearchBtn?.addEventListener('click', () => {
+      this.togglePopover('search');
+    });
+
+    this.topServicesBtn?.addEventListener('click', () => {
+      this.togglePopover('services');
     });
 
     this.kitBagBtn?.addEventListener('click', () => {
@@ -171,108 +192,50 @@ export class ShowroomUXController {
         if (!this.onboarding.getVisitor()) this.onboarding.continueAsGuest();
         this.setPhase('inside');
       }
-      this._setInsideTab('bag');
+      this.togglePopover('bag');
     });
-  }
 
-  _bindFloatingPanel() {
-    this.panelTabCatalog?.addEventListener('click', () => this._setInsideTab('catalog'));
-    this.panelTabServices?.addEventListener('click', () => this._setInsideTab('services'));
-    this.panelTabBag?.addEventListener('click', () => this._setInsideTab('bag'));
+    this.signOutBtn?.addEventListener('click', () => {
+      this.onboarding.signOut();
+      this.closeObjectPopup();
+      this.closePopover();
+      this.setPhase('onboarding');
+    });
 
-    // Live search across Products & Services
+    this.popoverCloseBtn?.addEventListener('click', () => this.closePopover());
+
     this.searchInput?.addEventListener('input', () => {
       this.searchQuery = this.searchInput.value.trim();
-      if (this.searchClearBtn) {
-        this.searchClearBtn.hidden = !this.searchQuery;
-      }
-      if (this.insideTab === 'services') {
-        this._renderServicesList();
+      if (this.popoverMode === 'services') {
+        this._renderServicesPopover();
       } else {
-        if (this.insideTab !== 'catalog') this._setInsideTab('catalog');
-        this._renderCatalogList();
+        this._renderSearchPopover();
       }
     });
 
-    this.searchClearBtn?.addEventListener('click', () => {
-      if (this.searchInput) {
-        this.searchInput.value = '';
-        this.searchInput.focus();
+    this.popoverBody?.addEventListener('click', (e) => {
+      const jumpBtn = e.target.closest('[data-jump-prod]');
+      if (jumpBtn) {
+        const pid = jumpBtn.dataset.jumpProd;
+        this.closePopover();
+        this.onFocusSection?.(pid);
+        this.openObjectPopup(pid);
+        return;
       }
-      this.searchQuery = '';
-      if (this.searchClearBtn) this.searchClearBtn.hidden = true;
-      this._renderCatalogList();
-      this._renderServicesList();
-    });
 
-    this.backToCounterBtn?.addEventListener('click', () => {
-      this.selectedProductId = null;
-      this.hoveredProductId = null;
-      this._syncCardStates();
-      this._emitCameraForCurrentView();
-    });
-
-    // Click handler for photo stack, product selection & + / - steppers
-    this.catalogScroll?.addEventListener('click', (e) => {
       const stackBtn = e.target.closest('button[data-open-stack]');
       if (stackBtn) {
         e.stopPropagation();
-        const pid = stackBtn.dataset.openStack;
-        this._focusProduct(pid, { lock: true });
-        this.openPhotoStack(pid);
+        this.openPhotoStack(stackBtn.dataset.openStack);
         return;
       }
 
-      const stepBtn = e.target.closest('button[data-step]');
-      if (stepBtn) {
-        e.stopPropagation();
-        const pid = stepBtn.dataset.pid;
-        const packIdx = Number(stepBtn.dataset.pack);
-        const delta = Number(stepBtn.dataset.step);
-        this.cart.adjust(pid, packIdx, delta);
-        this._focusProduct(pid, { lock: true });
-        return;
-      }
-
-      const card = e.target.closest('.fx-prod-card');
-      if (card) {
-        const pid = card.dataset.pid;
-        const willDeselect = this.selectedProductId === pid;
-        this.selectedProductId = willDeselect ? null : pid;
-        this._syncCardStates();
-        this._emitCameraForCurrentView();
-      }
-    });
-
-    // Hover handler: hovering any product row pans the 3D shop around in the background!
-    this.catalogScroll?.addEventListener('pointerover', (e) => {
-      const card = e.target.closest('.fx-prod-card');
-      if (!card || this.insideTab !== 'catalog') return;
-      const pid = card.dataset.pid;
-      if (pid === this.hoveredProductId) return;
-      this.hoveredProductId = pid;
-      window.clearTimeout(this._hoverTimer);
-      this._hoverTimer = window.setTimeout(() => {
-        this._syncCardStates();
-        this._emitCameraForCurrentView();
-      }, 75);
-    });
-
-    this.catalogScroll?.addEventListener('pointerleave', () => {
-      if (!this.hoveredProductId) return;
-      this.hoveredProductId = null;
-      window.clearTimeout(this._hoverTimer);
-      this._syncCardStates();
-      this._emitCameraForCurrentView();
-    });
-
-    // Bag view actions
-    this.bagView?.addEventListener('click', (e) => {
       const stepBtn = e.target.closest('button[data-step]');
       if (stepBtn) {
         this.cart.adjust(stepBtn.dataset.pid, Number(stepBtn.dataset.pack), Number(stepBtn.dataset.step));
         return;
       }
+
       if (e.target.closest('[data-clear-bag]')) {
         this.cart.clear();
         return;
@@ -284,162 +247,210 @@ export class ShowroomUXController {
       const copyBtn = e.target.closest('[data-copy-memo]');
       if (copyBtn) {
         navigator.clipboard?.writeText(this.cart.buildMemoText(this.onboarding.getVisitor())).then(() => {
-          copyBtn.textContent = 'Copied Order Memo ✓';
+          copyBtn.textContent = 'Copied ✓';
           window.setTimeout(() => {
             copyBtn.textContent = 'Copy Order Memo';
-          }, 1800);
+          }, 1600);
         });
       }
     });
   }
 
-  _focusProduct(pid, { lock = false } = {}) {
-    if (lock) {
-      this.selectedProductId = pid;
-    } else {
-      this.hoveredProductId = pid;
-    }
-    this._syncCardStates();
-    this._emitCameraForCurrentView();
-  }
-
-  _setInsideTab(tab) {
-    this.insideTab = tab;
-    const isCatalog = tab === 'catalog';
-    const isServices = tab === 'services';
-    const isBag = tab === 'bag';
-
-    this.panelTabCatalog?.classList.toggle('is-active', isCatalog);
-    this.panelTabServices?.classList.toggle('is-active', isServices);
-    this.panelTabBag?.classList.toggle('is-active', isBag);
-
-    if (this.searchWrap) this.searchWrap.hidden = isBag;
-    if (this.catalogScroll) this.catalogScroll.hidden = !isCatalog;
-    if (this.servicesScroll) this.servicesScroll.hidden = !isServices;
-    if (this.bagView) this.bagView.hidden = !isBag;
-
-    if (this.panelSubtitle) {
-      if (isServices) {
-        this.panelSubtitle.textContent = 'Play areas, turf nets, courts & turnkey sports builds';
-      } else if (isBag) {
-        this.panelSubtitle.textContent = 'Review your Kit Bag & send straight to WhatsApp';
-      } else {
-        this.panelSubtitle.textContent = 'Hover or tap any item to view it in 3D';
+  _bindObjectPopup() {
+    this.objectPopup?.addEventListener('click', (e) => {
+      if (e.target.closest('[data-close-obj]')) {
+        this.closeObjectPopup();
+        return;
       }
-    }
-
-    if (isServices) {
-      this._renderServicesList();
-    } else if (isBag) {
-      this._renderBagView(this.cart.getSummary());
-    } else {
-      this._renderCatalogList();
-    }
-    this._emitCameraForCurrentView();
+      const stackBtn = e.target.closest('button[data-open-stack]');
+      if (stackBtn) {
+        this.openPhotoStack(stackBtn.dataset.openStack);
+        return;
+      }
+      const stepBtn = e.target.closest('button[data-step]');
+      if (stepBtn) {
+        this.cart.adjust(stepBtn.dataset.pid, Number(stepBtn.dataset.pack), Number(stepBtn.dataset.step));
+        return;
+      }
+      if (e.target.closest('[data-open-bag-from-card]')) {
+        this.closeObjectPopup();
+        this.togglePopover('bag');
+      }
+    });
   }
 
   setPhase(nextPhase) {
     this.phase = nextPhase;
     const visitor = this.onboarding.getVisitor();
+    const isInside = nextPhase === 'inside';
 
-    if (this.onboardingGate) {
-      this.onboardingGate.hidden = nextPhase !== 'onboarding';
+    if (this.onboardingGate) this.onboardingGate.hidden = nextPhase !== 'onboarding';
+    if (this.welcomeHero) this.welcomeHero.hidden = nextPhase !== 'welcome';
+    if (this.topSearchBtn) this.topSearchBtn.hidden = !isInside;
+    if (this.topServicesBtn) this.topServicesBtn.hidden = !isInside;
+    if (this.sectionStrip) this.sectionStrip.hidden = !isInside;
+    if (this.signOutBtn) this.signOutBtn.hidden = nextPhase === 'onboarding';
+
+    if (this.roamHint) {
+      this.roamHint.classList.remove('is-fading');
+      this.roamHint.hidden = !isInside;
     }
-    if (this.welcomeHero) {
-      this.welcomeHero.hidden = nextPhase !== 'welcome';
+
+    if (!isInside) {
+      this.closeObjectPopup();
+      this.closePopover();
     }
-    if (this.floatingPanel) {
-      this.floatingPanel.hidden = nextPhase !== 'inside';
-    }
-    if (this.liveSpotBadge) {
-      this.liveSpotBadge.hidden = nextPhase !== 'inside';
-    }
-    if (this.signOutBtn) {
-      this.signOutBtn.hidden = nextPhase === 'onboarding';
-    }
-    if (this.visitorBadge) {
-      if (visitor && nextPhase !== 'onboarding') {
-        this.visitorBadge.hidden = false;
-        this.visitorBadge.textContent = `Hi, ${visitor.name}`;
-      } else {
-        this.visitorBadge.hidden = true;
-      }
-    }
+
     if (this.welcomeGreeting && visitor) {
-      const helloName = visitor.name === 'Guest' ? 'Welcome to Sultan Sports!' : `Welcome, ${visitor.name}!`;
-      this.welcomeGreeting.textContent = helloName;
+      this.welcomeGreeting.textContent =
+        visitor.name === 'Guest' ? 'Welcome to Sultan Sports!' : `Welcome, ${visitor.name}!`;
     }
 
-    if (nextPhase === 'inside') {
-      this._setInsideTab(this.insideTab);
-    } else {
-      this._emitCameraForCurrentView();
-    }
-  }
-
-  _getActiveProduct() {
-    const activeId = this.hoveredProductId || this.selectedProductId;
-    if (!activeId) return null;
-    return PRODUCTS.find((p) => p.id === activeId) || null;
-  }
-
-  _emitCameraForCurrentView() {
-    if (this.phase === 'onboarding') {
+    if (nextPhase === 'onboarding') {
       this.onStageChange?.({
         camPos: [0.55, 1.78, 9.8],
         camTarget: [0.65, 1.65, 1.35],
         shutterOpen: 0,
         mascot: { pos: [0.45, 0, 1.92], rotY: -0.06, anim: 'idle' },
       });
-      return;
-    }
-
-    if (this.phase === 'welcome') {
+    } else if (nextPhase === 'welcome') {
       this.onStageChange?.({
         camPos: [0.28, 1.56, 5.4],
         camTarget: [0.18, 1.46, -1.85],
         shutterOpen: 1,
         mascot: { pos: [0.48, 0, 1.35], rotY: -0.1, anim: 'greet' },
       });
+    } else if (nextPhase === 'inside') {
+      this.onEnterExplore?.();
+    }
+  }
+
+  /**
+   * Triggered when the customer taps a 3D sports item, 3D wall sign, or top section chip!
+   */
+  handle3DSectionClick(sectionId) {
+    this.dismissRoamHint();
+    if (sectionId === '__counter') {
+      this.closeObjectPopup();
+      this.activeSectionId = '__counter';
+      this._syncSectionChips();
+      this.openPopover('bag');
       return;
     }
+    this.closePopover();
+    this.openObjectPopup(sectionId);
+  }
 
-    // Inside the shop!
-    const activeProd = this.insideTab === 'catalog' ? this._getActiveProduct() : null;
+  openObjectPopup(productId) {
+    const prod = PRODUCTS.find((p) => p.id === productId);
+    if (!prod || !this.objectPopup) return;
+    this.activeSectionId = prod.id;
+    this._syncSectionChips();
 
-    if (activeProd) {
-      if (this.liveSpotBadge) {
-        this.liveSpotBadge.textContent = `Viewing Shelf ${activeProd.index} · ${activeProd.name}`;
-      }
-      if (this.backToCounterBtn) {
-        this.backToCounterBtn.hidden = false;
-      }
-      this.onStageChange?.({
-        camPos: activeProd.focusCam.pos,
-        camTarget: activeProd.focusCam.target,
-        shutterOpen: 1,
-        // Keep Mansoor gracefully beside the front-left counter or staged at the rack
-        mascot: activeProd.mascot || { pos: [-0.52, 0, -0.82], rotY: 0.68, anim: 'point' },
-      });
-      return;
-    }
+    const galleryCount = prod.gallery?.length || 1;
+    const summary = this.cart.getSummary();
 
-    // Default inside view: Mansoor standing right beside the front-left glass counter!
-    if (this.liveSpotBadge) {
-      this.liveSpotBadge.textContent =
-        this.insideTab === 'bag'
-          ? 'Front-Left Billing Counter · Ready for WhatsApp Order'
-          : 'Mansoor at Front-Left Counter · Hover or tap any product';
+    const packsHtml = prod.packs
+      .map((pack, idx) => {
+        const qty = this.cart.getQty(prod.id, idx);
+        const key = this.cart.makeKey(prod.id, idx);
+        return `
+          <div class="obj-pack-row ${qty > 0 ? 'has-qty' : ''}" data-pack-key="${key}">
+            <div class="obj-pack-left">
+              <span class="obj-pack-label">${pack.label}</span>
+              <span class="obj-pack-price">${formatInr(pack.price)}</span>
+            </div>
+            <div class="obj-stepper">
+              <button type="button" class="obj-step-btn" data-pid="${prod.id}" data-pack="${idx}" data-step="-1" aria-label="Remove ${pack.label}">−</button>
+              <span class="obj-step-qty" data-qty-for="${key}">${qty}</span>
+              <button type="button" class="obj-step-btn is-plus" data-pid="${prod.id}" data-pack="${idx}" data-step="1" aria-label="Add ${pack.label}">+</button>
+            </div>
+          </div>
+        `;
+      })
+      .join('');
+
+    this.objectPopup.innerHTML = `
+      <div class="obj-head">
+        <button
+          type="button"
+          class="obj-thumb-btn"
+          data-open-stack="${prod.id}"
+          title="Tap to swipe ${galleryCount} real photos"
+        >
+          <img src="${prod.image}" alt="${prod.name}" />
+          <span class="obj-stack-badge">⧉ ${galleryCount}</span>
+        </button>
+        <div class="obj-title-col">
+          <span class="obj-sec-tag">SECTION ${prod.index} · FROM ${formatInr(prod.retailPrice)}</span>
+          <h3 class="obj-title">${prod.name}</h3>
+          <p class="obj-desc">${prod.subtitle}</p>
+        </div>
+        <button type="button" class="mini-close-btn" data-close-obj="1" aria-label="Close card">✕</button>
+      </div>
+      <div class="obj-packs">${packsHtml}</div>
+      <div class="obj-foot">
+        <span class="obj-foot-note" data-obj-bag-summary>
+          ${
+            summary.totalPacks > 0
+              ? `In Bag: ${summary.totalPacks} packs · ${formatInr(summary.totalAmount)}`
+              : 'Tap photo for gallery · Tap + to add'
+          }
+        </span>
+        <button type="button" class="obj-bag-link" data-open-bag-from-card="1">Kit Bag →</button>
+      </div>
+    `;
+    this.objectPopup.hidden = false;
+  }
+
+  closeObjectPopup() {
+    this.activeSectionId = null;
+    this._syncSectionChips();
+    if (this.objectPopup) this.objectPopup.hidden = true;
+  }
+
+  /* =========================================================
+     TOP-ANCHORED COMPACT POPOVER (SEARCH / SERVICES / KIT BAG)
+     ========================================================= */
+  togglePopover(mode) {
+    if (this.popoverMode === mode && !this.topPopover?.hidden) {
+      this.closePopover();
+    } else {
+      this.openPopover(mode);
     }
-    if (this.backToCounterBtn) {
-      this.backToCounterBtn.hidden = true;
+  }
+
+  openPopover(mode) {
+    if (!this.topPopover) return;
+    this.closeObjectPopup();
+    this.popoverMode = mode;
+    this.topPopover.hidden = false;
+
+    this.topSearchBtn?.classList.toggle('is-active', mode === 'search');
+    this.topServicesBtn?.classList.toggle('is-active', mode === 'services');
+
+    if (mode === 'search') {
+      if (this.popoverTitle) this.popoverTitle.textContent = 'Search Products & Sports Gear';
+      if (this.popoverSearchBox) this.popoverSearchBox.hidden = false;
+      this._renderSearchPopover();
+      window.setTimeout(() => this.searchInput?.focus(), 40);
+    } else if (mode === 'services') {
+      if (this.popoverTitle) this.popoverTitle.textContent = 'Play Areas, Nets & Court Services';
+      if (this.popoverSearchBox) this.popoverSearchBox.hidden = true;
+      this._renderServicesPopover();
+    } else if (mode === 'bag') {
+      if (this.popoverTitle) this.popoverTitle.textContent = 'Your Kit Bag & WhatsApp Order';
+      if (this.popoverSearchBox) this.popoverSearchBox.hidden = true;
+      this.onFocusSection?.('__counter');
+      this._renderBagPopover(this.cart.getSummary());
     }
-    this.onStageChange?.({
-      camPos: [1.12, 1.46, 0.92],
-      camTarget: [-0.88, 0.94, -0.36],
-      shutterOpen: 1,
-      mascot: { pos: [-0.52, 0, -0.82], rotY: 0.68, anim: this.insideTab === 'bag' ? 'clap' : 'greet' },
-    });
+  }
+
+  closePopover() {
+    this.popoverMode = null;
+    if (this.topPopover) this.topPopover.hidden = true;
+    this.topSearchBtn?.classList.remove('is-active');
+    this.topServicesBtn?.classList.remove('is-active');
   }
 
   _buildCustomWhatsAppUrl(message) {
@@ -452,35 +463,27 @@ export class ShowroomUXController {
     return `https://wa.me/91${primaryPhone}?text=${encodeURIComponent(`${message}${customerTag}`)}`;
   }
 
-  _renderCatalogList() {
-    if (!this.catalogScroll) return;
+  _renderSearchPopover() {
+    if (!this.popoverBody) return;
     const q = this.searchQuery.toLowerCase();
     const filtered = q
-      ? PRODUCTS.filter((prod) => {
-          const hay = [
-            prod.name,
-            prod.subtitle,
-            prod.shortTab,
-            prod.index,
-            ...(prod.packs || []).map((p) => p.label),
-          ]
+      ? PRODUCTS.filter((prod) =>
+          [prod.name, prod.subtitle, prod.shortTab, prod.index, ...prod.packs.map((p) => p.label)]
             .join(' ')
-            .toLowerCase();
-          return hay.includes(q);
-        })
+            .toLowerCase()
+            .includes(q)
+        )
       : PRODUCTS;
 
     if (filtered.length === 0) {
       const askUrl = this._buildCustomWhatsAppUrl(
-        `Hello ${BRAND.whatsappGreetingName || BRAND.owner} (${BRAND.name})! I searched for "${this.searchQuery}" on your 3D Showroom. Do you have it in stock?`
+        `Hello ${BRAND.whatsappGreetingName || BRAND.owner} (${BRAND.name})! Do you have "${this.searchQuery}" in stock?`
       );
-      this.catalogScroll.innerHTML = `
-        <div class="fx-search-empty">
-          <div class="fx-search-empty-title">We stock almost everything in sports!</div>
-          <p class="fx-bag-hint">
-            "<strong>${this.searchQuery}</strong>" isn't in our quick preview list yet, but we likely have it in-store or can source it wholesale.
-          </p>
-          <a href="${askUrl}" target="_blank" rel="noopener noreferrer" class="fx-wa-btn">
+      this.popoverBody.innerHTML = `
+        <div class="pop-empty">
+          <strong>We stock almost everything in sports!</strong>
+          <p>"${this.searchQuery}" isn't in the 3D preview shelves yet, but we likely have it in-store or wholesale.</p>
+          <a href="${askUrl}" target="_blank" rel="noopener noreferrer" class="pop-wa-btn">
             Ask Mansoor for "${this.searchQuery}" on WhatsApp →
           </a>
         </div>
@@ -488,243 +491,113 @@ export class ShowroomUXController {
       return;
     }
 
-    this.catalogScroll.innerHTML = filtered.map((prod) => {
-      const packsHtml = prod.packs
-        .map((pack, idx) => {
-          const qty = this.cart.getQty(prod.id, idx);
-          const key = this.cart.makeKey(prod.id, idx);
-          return `
-            <div class="fx-pack-row ${qty > 0 ? 'has-qty' : ''}" data-pack-key="${key}">
-              <div class="fx-pack-info">
-                <span class="fx-pack-label">${pack.label}</span>
-                <span class="fx-pack-price">${formatInr(pack.price)}</span>
-              </div>
-              <div class="fx-stepper">
-                <button type="button" class="fx-step-btn" data-pid="${prod.id}" data-pack="${idx}" data-step="-1" aria-label="Remove ${pack.label}">−</button>
-                <span class="fx-step-qty" data-qty-for="${key}">${qty}</span>
-                <button type="button" class="fx-step-btn is-plus" data-pid="${prod.id}" data-pack="${idx}" data-step="1" aria-label="Add ${pack.label}">+</button>
-              </div>
+    this.popoverBody.innerHTML = filtered
+      .map(
+        (prod) => `
+          <div class="pop-search-item" data-jump-prod="${prod.id}">
+            <button type="button" class="pop-thumb" data-open-stack="${prod.id}" title="View photos">
+              <img src="${prod.image}" alt="${prod.name}" loading="lazy" />
+              <span>⧉ ${prod.gallery?.length || 1}</span>
+            </button>
+            <div class="pop-item-info">
+              <div class="pop-item-name">${prod.index} · ${prod.name}</div>
+              <div class="pop-item-sub">From ${formatInr(prod.retailPrice)} · Tap to fly to 3D rack ↗</div>
             </div>
-          `;
-        })
-        .join('');
+          </div>
+        `
+      )
+      .join('');
+  }
 
-      const galleryCount = (prod.gallery && prod.gallery.length) || 1;
+  _renderServicesPopover() {
+    if (!this.popoverBody) return;
+    const customQuoteUrl = this._buildCustomWhatsAppUrl(
+      `Hello ${BRAND.whatsappGreetingName || BRAND.owner} (${BRAND.name})! I would like a quote for building a sports play area / court.`
+    );
+
+    const listHtml = SERVICES.map((svc) => {
+      const waUrl = this._buildCustomWhatsAppUrl(
+        `Hello ${BRAND.whatsappGreetingName || BRAND.owner} (${BRAND.name})! I'm interested in "${svc.name}". Please share quote & site visit details.`
+      );
       return `
-        <article class="fx-prod-card" data-pid="${prod.id}">
-          <div class="fx-prod-head">
-            <div class="fx-prod-meta">
-              <button
-                type="button"
-                class="fx-prod-thumb-wrap"
-                data-open-stack="${prod.id}"
-                aria-label="Open ${galleryCount} real photos of ${prod.name}"
-                title="Tap to swipe ${galleryCount} real photos"
-              >
-                <img
-                  src="${prod.image || `/products/${prod.id}.webp`}"
-                  alt="${prod.name}"
-                  class="fx-prod-thumb"
-                  width="68"
-                  height="68"
-                  loading="lazy"
-                />
-                <span class="fx-prod-idx">${prod.index}</span>
-                <span class="fx-stack-pill">⧉ ${galleryCount}</span>
-              </button>
-              <div class="fx-prod-text">
-                <h3 class="fx-prod-title">${prod.name}</h3>
-                <p class="fx-prod-sub">${prod.subtitle}</p>
-                <div class="fx-prod-price-row">
-                  <span class="fx-prod-price">From ${formatInr(prod.retailPrice)}</span>
-                  <span class="fx-prod-cue">Tap photo · Hover 3D ↗</span>
-                </div>
-              </div>
-            </div>
+        <article class="pop-svc-card">
+          <div class="pop-svc-top">
+            <span class="pop-svc-badge">${svc.badge}</span>
+            <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="pop-svc-quote">Get Quote →</a>
           </div>
-          <div class="fx-pack-drawer">
-            ${packsHtml}
-          </div>
+          <h3 class="pop-svc-title">${svc.name}</h3>
+          <p class="pop-svc-sub">${svc.subtitle}</p>
         </article>
       `;
     }).join('');
-    this._syncCardStates();
+
+    this.popoverBody.innerHTML = `
+      ${listHtml}
+      <a href="${customQuoteUrl}" target="_blank" rel="noopener noreferrer" class="pop-wa-btn">
+        Discuss Custom Court / Turf Project on WhatsApp →
+      </a>
+    `;
   }
 
-  _renderServicesList() {
-    if (!this.servicesScroll) return;
-    const q = this.searchQuery.toLowerCase();
-    const filtered = q
-      ? SERVICES.filter((svc) =>
-          [svc.badge, svc.name, svc.subtitle, ...(svc.highlights || [])].join(' ').toLowerCase().includes(q)
-        )
-      : SERVICES;
-
-    const customQuoteUrl = this._buildCustomWhatsAppUrl(
-      `Hello ${BRAND.whatsappGreetingName || BRAND.owner} (${BRAND.name})! I would like a quote for a custom sports court / play area project.`
-    );
-
-    const cardsHtml = filtered
-      .map((svc) => {
-        const waUrl = this._buildCustomWhatsAppUrl(
-          `Hello ${BRAND.whatsappGreetingName || BRAND.owner} (${BRAND.name})! I'm interested in your "${svc.name}" service. Please share details & site visit availability.`
-        );
-        const points = (svc.highlights || []).map((h) => `<li>${h}</li>`).join('');
-        return `
-          <article class="fx-service-card">
-            <span class="fx-service-badge">${svc.badge}</span>
-            <h3 class="fx-service-title">${svc.name}</h3>
-            <p class="fx-service-sub">${svc.subtitle}</p>
-            <ul class="fx-service-list">${points}</ul>
-            <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="fx-service-cta">
-              Get Free Quote on WhatsApp →
-            </a>
-          </article>
-        `;
-      })
-      .join('');
-
-    this.servicesScroll.innerHTML =
-      (cardsHtml ||
-        `<div class="fx-search-empty">
-          <div class="fx-search-empty-title">Custom Sports Infrastructure</div>
-          <p class="fx-bag-hint">We build cricket nets, badminton &amp; volleyball courts, turf arenas, and school grounds across Kadapa &amp; AP.</p>
-        </div>`) +
-      `<div class="fx-service-banner">
-        <strong>Planning a custom play area or academy?</strong>
-        <span>Tell us your dimensions and sport—we handle netting, turf, flooring, poles &amp; lighting end-to-end.</span>
-        <a href="${customQuoteUrl}" target="_blank" rel="noopener noreferrer" class="fx-wa-btn">
-          Discuss Custom Project on WhatsApp →
-        </a>
-      </div>`;
-  }
-
-  _syncCardStates() {
-    if (!this.catalogScroll) return;
-    const activeId = this.hoveredProductId || this.selectedProductId;
-    this.catalogScroll.querySelectorAll('.fx-prod-card').forEach((card) => {
-      const pid = card.dataset.pid;
-      card.classList.toggle('is-hovered', pid === activeId);
-      card.classList.toggle('is-selected', pid === this.selectedProductId);
-    });
-  }
-
-  _onCartUpdate(summary) {
-    const visitor = this.onboarding.getVisitor();
-    const waUrl = this.cart.buildWhatsAppUrl(visitor);
-
-    if (this.kitBagBtn) {
-      this.kitBagBtn.textContent =
-        summary.totalPacks > 0
-          ? `Kit Bag (${summary.totalPacks}) · ${formatInr(summary.totalAmount)}`
-          : 'Kit Bag · 0';
-      this.kitBagBtn.classList.toggle('has-items', summary.totalPacks > 0);
-    }
-
-    if (this.panelTabBag) {
-      this.panelTabBag.textContent =
-        summary.totalPacks > 0 ? `Kit Bag (${summary.totalPacks})` : 'Kit Bag (0)';
-    }
-
-    if (this.panelFooterSummary) {
-      this.panelFooterSummary.textContent =
-        summary.totalPacks > 0
-          ? `${summary.totalPacks} packs (${summary.totalUnits} pcs) · ${formatInr(summary.totalAmount)}`
-          : 'Tap + on any pack to build your order';
-    }
-
-    if (this.panelWaBtn) {
-      this.panelWaBtn.href = waUrl;
-    }
-
-    // In-place DOM updates so + / - never steals keyboard focus
-    document.querySelectorAll('[data-qty-for]').forEach((el) => {
-      const [pid, idxStr] = el.dataset.qtyFor.split('__');
-      const qty = this.cart.getQty(pid, Number(idxStr));
-      el.textContent = String(qty);
-      el.closest('[data-pack-key]')?.classList.toggle('has-qty', qty > 0);
-    });
-
-    if (this.insideTab === 'bag') {
-      this._renderBagView(summary);
-    }
-  }
-
-  _renderBagView(summary) {
-    if (!this.bagView) return;
+  _renderBagPopover(summary) {
+    if (!this.popoverBody) return;
     const visitor = this.onboarding.getVisitor();
     const waUrl = this.cart.buildWhatsAppUrl(visitor);
     const hasUpi = Boolean(BRAND.upiId);
 
     if (summary.lines.length === 0) {
-      this.bagView.innerHTML = `
-        <div class="fx-bag-empty">
-          <p>Your Kit Bag is empty right now.</p>
-          <p class="fx-bag-hint">Switch to <strong>Products &amp; Prices</strong> to pick Retail or Wholesale packs, or load a sample Kadapa club order:</p>
-          <button type="button" class="fx-secondary-btn" data-sample-bag="1">Load Sample Club Order</button>
-          <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="fx-wa-btn">Chat on WhatsApp →</a>
+      this.popoverBody.innerHTML = `
+        <div class="pop-empty">
+          <strong>Your Kit Bag is empty</strong>
+          <p>Swipe around the 3D shop and tap any sports item on the wall to add Retail or Wholesale packs.</p>
+          <button type="button" class="pop-sec-btn" data-sample-bag="1">Load Sample Club Order</button>
+          <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="pop-wa-btn">Chat on WhatsApp →</a>
         </div>
       `;
       return;
     }
 
-    const linesHtml = summary.lines
+    const rowsHtml = summary.lines
       .map(
         (line) => `
-          <div class="fx-bag-line">
-            <div>
-              <div class="fx-bag-name">${line.productName}</div>
-              <div class="fx-bag-sub">${line.packLabel} · ${formatInr(line.unitPrice)}</div>
+          <div class="pop-bag-row">
+            <div class="pop-bag-info">
+              <div class="pop-item-name">${line.productName}</div>
+              <div class="pop-item-sub">${line.packLabel} · ${formatInr(line.lineTotal)}</div>
             </div>
-            <div class="fx-bag-right">
-              <div class="fx-stepper">
-                <button type="button" class="fx-step-btn" data-pid="${line.productId}" data-pack="${line.packIdx}" data-step="-1">−</button>
-                <span class="fx-step-qty">${line.count}</span>
-                <button type="button" class="fx-step-btn is-plus" data-pid="${line.productId}" data-pack="${line.packIdx}" data-step="1">+</button>
-              </div>
-              <span class="fx-bag-amt">${formatInr(line.lineTotal)}</span>
+            <div class="obj-stepper">
+              <button type="button" class="obj-step-btn" data-pid="${line.productId}" data-pack="${line.packIdx}" data-step="-1">−</button>
+              <span class="obj-step-qty">${line.count}</span>
+              <button type="button" class="obj-step-btn is-plus" data-pid="${line.productId}" data-pack="${line.packIdx}" data-step="1">+</button>
             </div>
           </div>
         `
       )
       .join('');
 
-    this.bagView.innerHTML = `
-      <div class="fx-bag-lines">${linesHtml}</div>
-      <div class="fx-bag-total">
-        <span>Total (${summary.totalUnits} pcs/sets) <button type="button" class="fx-clear-btn" data-clear-bag="1">Clear</button></span>
+    this.popoverBody.innerHTML = `
+      <div class="pop-bag-list">${rowsHtml}</div>
+      <div class="pop-bag-total">
+        <span>Total (${summary.totalUnits} pcs) <button type="button" class="pop-clear-btn" data-clear-bag="1">Clear</button></span>
         <strong>${formatInr(summary.totalAmount)}</strong>
       </div>
       ${
         hasUpi
-          ? `<div class="fx-upi-box">
-               <div id="fx-upi-qr" class="fx-upi-qr"></div>
-               <div>
-                 <div class="fx-upi-title">Scan &amp; Pay via UPI</div>
-                 <div class="fx-upi-id">${BRAND.upiId}</div>
-               </div>
+          ? `<div class="pop-upi-box">
+               <div id="fx-upi-qr" class="pop-upi-qr"></div>
+               <div><strong>Scan &amp; Pay UPI</strong><div class="pop-item-sub">${BRAND.upiId}</div></div>
              </div>`
           : ''
       }
-      <div class="fx-bag-actions">
-        <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="fx-wa-btn">Send Order on WhatsApp →</a>
-        <button type="button" class="fx-secondary-btn" data-copy-memo="1">Copy Order Memo</button>
-      </div>
-      <div class="fx-store-footer">
-        <div><strong>${BRAND.name}</strong> · ${BRAND.hours}</div>
-        <div>${BRAND.address}</div>
-        <div class="fx-call-row">
-          <a href="tel:+91${BRAND.phones[0].raw}">✆ ${BRAND.phones[0].display}</a>
-          <a href="${BRAND.mapsQueryUrl}" target="_blank" rel="noopener noreferrer">Google Maps ↗</a>
-        </div>
-      </div>
+      <a href="${waUrl}" target="_blank" rel="noopener noreferrer" class="pop-wa-btn">Send Order on WhatsApp →</a>
+      <button type="button" class="pop-sec-btn" data-copy-memo="1">Copy Order Memo</button>
     `;
 
     if (hasUpi) {
-      const qrBox = this.bagView.querySelector('#fx-upi-qr');
+      const qrBox = this.popoverBody.querySelector('#fx-upi-qr');
       const uri = this.cart.buildUpiUri();
       if (qrBox && uri) {
-        QRCode.toString(uri, { type: 'svg', margin: 1, width: 92 })
+        QRCode.toString(uri, { type: 'svg', margin: 1, width: 84 })
           .then((svg) => {
             qrBox.innerHTML = svg;
           })
@@ -733,20 +606,45 @@ export class ShowroomUXController {
     }
   }
 
+  _onCartUpdate(summary) {
+    if (this.kitBagBtn) {
+      this.kitBagBtn.textContent =
+        summary.totalPacks > 0 ? `👜 ${summary.totalPacks} · ${formatInr(summary.totalAmount)}` : '👜 0';
+    }
+
+    // Update any visible steppers in-place so focus is preserved
+    document.querySelectorAll('[data-qty-for]').forEach((el) => {
+      const [pid, idxStr] = el.dataset.qtyFor.split('__');
+      const qty = this.cart.getQty(pid, Number(idxStr));
+      el.textContent = String(qty);
+      el.closest('[data-pack-key]')?.classList.toggle('has-qty', qty > 0);
+    });
+
+    const footSummary = document.querySelector('[data-obj-bag-summary]');
+    if (footSummary) {
+      footSummary.textContent =
+        summary.totalPacks > 0
+          ? `In Bag: ${summary.totalPacks} packs · ${formatInr(summary.totalAmount)}`
+          : 'Tap photo for gallery · Tap + to add';
+    }
+
+    if (this.popoverMode === 'bag' && !this.topPopover?.hidden) {
+      this._renderBagPopover(summary);
+    }
+  }
+
   /* =========================================================
-     SWIPEABLE PHOTO STACK GALLERY
+     SWIPEABLE 3D PHOTO STACK GALLERY
      ========================================================= */
   _bindPhotoStack() {
     this.stackCloseBtn?.addEventListener('click', () => this.closePhotoStack());
     this.stackPrevBtn?.addEventListener('click', () => this.stepPhotoStack(-1));
     this.stackNextBtn?.addEventListener('click', () => this.stepPhotoStack(1));
 
-    // Close on backdrop click
     this.stackModal?.addEventListener('click', (e) => {
       if (e.target === this.stackModal) this.closePhotoStack();
     });
 
-    // Clickable bottom thumbnail strip
     this.stackThumbs?.addEventListener('click', (e) => {
       const btn = e.target.closest('button[data-stack-idx]');
       if (!btn) return;
@@ -754,21 +652,19 @@ export class ShowroomUXController {
       this._renderPhotoStackDeck();
     });
 
-    // Keyboard navigation while stack is open
     window.addEventListener('keydown', (e) => {
-      if (!this.stackProduct || this.stackModal?.hidden) return;
+      if (this.stackProduct && !this.stackModal?.hidden) {
+        if (e.key === 'Escape') this.closePhotoStack();
+        else if (e.key === 'ArrowRight') this.stepPhotoStack(1);
+        else if (e.key === 'ArrowLeft') this.stepPhotoStack(-1);
+        return;
+      }
       if (e.key === 'Escape') {
-        this.closePhotoStack();
-      } else if (e.key === 'ArrowRight') {
-        e.preventDefault();
-        this.stepPhotoStack(1);
-      } else if (e.key === 'ArrowLeft') {
-        e.preventDefault();
-        this.stepPhotoStack(-1);
+        this.closeObjectPopup();
+        this.closePopover();
       }
     });
 
-    // Touch & Mouse drag-to-swipe physics on the card deck
     let dragStartX = null;
     let dragDx = 0;
     let activeCard = null;
@@ -798,7 +694,7 @@ export class ShowroomUXController {
       dragDx = 0;
       if (Math.abs(dx) > 55) {
         const dir = dx < 0 ? 1 : -1;
-        activeCard.style.transform = `translate3d(${dx < 0 ? -360 : 360}px, 24px, 0) rotate(${dx < 0 ? -16 : 16}deg)`;
+        activeCard.style.transform = `translate3d(${dx < 0 ? -340 : 340}px, 20px, 0) rotate(${dx < 0 ? -15 : 15}deg)`;
         activeCard.style.opacity = '0';
         const cardRef = activeCard;
         activeCard = null;
@@ -806,7 +702,7 @@ export class ShowroomUXController {
           cardRef.style.transform = '';
           cardRef.style.opacity = '';
           this.stepPhotoStack(dir);
-        }, 180);
+        }, 170);
       } else {
         activeCard.style.transform = '';
         activeCard = null;
@@ -856,28 +752,20 @@ export class ShowroomUXController {
       : [{ src: this.stackProduct.image, caption: this.stackProduct.name }];
     const n = photos.length;
 
-    // Render layered 3D stack (front card offset=0, next behind offset=1, third offset=2)
-    const cardsHtml = photos
+    this.stackDeck.innerHTML = photos
       .map((item, idx) => {
         const offset = (idx - this.stackIndex + n) % n;
-        const depth = Math.min(offset, 2);
         return `
-          <figure class="stack-card" data-offset="${offset}" data-depth="${depth}">
+          <figure class="stack-card" data-offset="${offset}">
             <img src="${item.src}" alt="${item.caption}" draggable="false" />
           </figure>
         `;
       })
       .join('');
 
-    this.stackDeck.innerHTML = cardsHtml;
-
     const current = photos[this.stackIndex];
-    if (this.stackCaption) {
-      this.stackCaption.textContent = current.caption || this.stackProduct.name;
-    }
-    if (this.stackCounter) {
-      this.stackCounter.textContent = `${this.stackIndex + 1} / ${n} · Swipe or tap arrows`;
-    }
+    if (this.stackCaption) this.stackCaption.textContent = current.caption || this.stackProduct.name;
+    if (this.stackCounter) this.stackCounter.textContent = `${this.stackIndex + 1} / ${n} · Swipe or tap arrows`;
     if (this.stackThumbs) {
       this.stackThumbs.innerHTML = photos
         .map(

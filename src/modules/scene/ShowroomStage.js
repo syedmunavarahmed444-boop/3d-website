@@ -10,6 +10,12 @@ function lerpAngle(current, target, t) {
   return current + diff * t;
 }
 
+function shortestYawTarget(currentYaw, desiredYaw) {
+  let diff = ((desiredYaw - currentYaw + Math.PI) % (Math.PI * 2)) - Math.PI;
+  if (diff < -Math.PI) diff += Math.PI * 2;
+  return currentYaw + diff;
+}
+
 function makeRadialShadowTexture() {
   const c = document.createElement('canvas');
   c.width = 128;
@@ -26,59 +32,93 @@ function makeRadialShadowTexture() {
   return tex;
 }
 
-function makeHeldM4BatTexture() {
+/**
+ * Generates a crisp, high-contrast 3D architectural showroom section plaque texture
+ * mounted directly onto the shop walls above each product zone.
+ */
+function makeWallSignTexture({ code, title, sub }) {
   const c = document.createElement('canvas');
-  c.width = 128;
-  c.height = 512;
+  c.width = 640;
+  c.height = 176;
   const ctx = c.getContext('2d');
-  ctx.fillStyle = '#dbb078';
-  ctx.fillRect(0, 0, 128, 512);
-  ctx.fillStyle = 'rgba(115, 68, 22, 0.22)';
-  for (let i = 0; i < 8; i++) {
-    ctx.fillRect(10 + i * 15, 0, 2, 485);
-  }
-  ctx.fillStyle = '#ffffff';
-  ctx.strokeStyle = '#1e3a8a';
-  ctx.lineWidth = 4;
-  ctx.fillRect(16, 64, 96, 150);
-  ctx.strokeRect(16, 64, 96, 150);
-  ctx.fillStyle = '#dc2626';
-  ctx.font = '900 44px Arial';
+
+  // Deep emerald-navy signboard background
+  const grad = ctx.createLinearGradient(0, 0, 640, 176);
+  grad.addColorStop(0, '#09261d');
+  grad.addColorStop(1, '#051510');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, 640, 176);
+
+  // Brushed gold outer & inner trim border
+  ctx.strokeStyle = '#f0be52';
+  ctx.lineWidth = 8;
+  ctx.strokeRect(8, 8, 624, 160);
+  ctx.strokeStyle = 'rgba(240, 190, 82, 0.42)';
+  ctx.lineWidth = 2;
+  ctx.strokeRect(18, 18, 604, 140);
+
+  // Left gold index badge
+  ctx.fillStyle = '#f0be52';
+  ctx.beginPath();
+  ctx.roundRect(32, 34, 92, 42, 10);
+  ctx.fill();
+
+  ctx.fillStyle = '#061912';
+  ctx.font = '900 24px "Plus Jakarta Sans", Arial, sans-serif';
   ctx.textAlign = 'center';
-  ctx.fillText('M4', 64, 118);
-  ctx.fillStyle = '#1e3a8a';
-  ctx.font = '800 13px Arial';
-  ctx.fillText('BEAST PRO', 64, 145);
-  ctx.fillStyle = '#dc2626';
-  ctx.fillRect(22, 162, 84, 24);
-  ctx.fillStyle = '#fde047';
-  ctx.font = '900 12px Arial';
-  ctx.fillText('SULTAN', 64, 179);
-  ctx.fillStyle = '#b91c1c';
-  ctx.fillRect(0, 484, 128, 28);
+  ctx.textBaseline = 'middle';
+  ctx.fillText(code, 78, 56);
+
+  // "TAP FOR PRICES" right pill cue
+  ctx.fillStyle = 'rgba(240, 190, 82, 0.16)';
+  ctx.beginPath();
+  ctx.roundRect(434, 36, 174, 38, 19);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(240, 190, 82, 0.65)';
+  ctx.lineWidth = 2;
+  ctx.stroke();
+
+  ctx.fillStyle = '#f8d277';
+  ctx.font = '800 17px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText('TAP 3D RACK ↗', 521, 56);
+
+  // Main section wall title
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#fdfaf2';
+  ctx.font = '900 35px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText(title, 34, 114);
+
+  // Price / subtitle strip
+  ctx.fillStyle = '#f0be52';
+  ctx.font = '700 20px "Plus Jakarta Sans", Arial, sans-serif';
+  ctx.fillText(sub, 34, 146);
+
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
   return tex;
 }
 
 /**
  * Full 3D WebGL Showroom Stage:
- * - Unified single _loadModel() helper backed by THREE.LoadingManager
- * - Adaptive mobile quality (1.5x pixelRatio cap, 1024 shadow map) + <40fps auto quality governor
- * - Automatic render-loop pause when browser tab is hidden or Classic View is open
- * - Bone-locked held M4 bat, grounded contact shadows & aspect-aware portrait framing
+ * - Unified THREE.LoadingManager across all 4 GLB models
+ * - 3D Wall Section Signs mounted directly onto showroom walls
+ * - 360° touch-swipe & mouse-drag free-look inside the shop with smooth inertia
+ * - Raycaster 3D object & wall-sign picking (tapping any 3D rack opens its compact price card)
+ * - Adaptive mobile quality + render pause when tab is hidden
  */
 export class ShowroomStage {
-  constructor(canvas, { onProgress, onReady, onError } = {}) {
+  constructor(canvas, { onProgress, onReady, onError, onSelectSection, onUserSwipe } = {}) {
     this.canvas = canvas;
     this.onProgress = onProgress;
     this.onReady = onReady;
     this.onError = onError;
+    this.onSelectSection = onSelectSection;
+    this.onUserSwipe = onUserSwipe;
 
     this.clock = new THREE.Clock();
     this.mascot = null;
     this.mascotShadow = null;
-    this.heldBat = null;
     this.morphMesh = null;
     this.ceilingFan = null;
     this.elapsed = 0;
@@ -87,18 +127,40 @@ export class ShowroomStage {
     this.currentAnim = null;
     this.isMobile = window.innerWidth <= 860;
 
-    // Render pause & adaptive FPS governor state
+    // Render pause & adaptive FPS governor
     this.externalPaused = false;
     this._isLoopRunning = false;
     this._fpsFrames = 0;
     this._fpsAccum = 0;
     this._lowPowerApplied = false;
 
+    // Story / Exterior camera state
     this.desiredCamPos = new THREE.Vector3(...CHAPTERS[0].camera.pos);
     this.desiredCamTarget = new THREE.Vector3(...CHAPTERS[0].camera.target);
     this.currentCamTarget = new THREE.Vector3(...CHAPTERS[0].camera.target);
-    this.pointerOffset = new THREE.Vector2(0, 0);
-    this.smoothPointer = new THREE.Vector2(0, 0);
+
+    // Interactive 360° Free-Swipe Inside Mode
+    this.exploreMode = false;
+    this.standPos = new THREE.Vector3(0.08, 1.48, -1.25);
+    this.targetStandPos = new THREE.Vector3(0.08, 1.48, -1.25);
+    this.yaw = 2.05; // Facing front-left counter & Mansoor on entry
+    this.targetYaw = 2.05;
+    this.pitch = -0.06;
+    this.targetPitch = -0.06;
+    this.velYaw = 0;
+    this._isDragging = false;
+    this._dragMoved = 0;
+    this._downX = 0;
+    this._downY = 0;
+    this._lastX = 0;
+    this._lastY = 0;
+
+    // 3D Raycasting & Wall Signs
+    this.raycaster = new THREE.Raycaster();
+    this.pickables = [];
+    this.wallSigns = new Map();
+    this.hoveredSectionId = null;
+    this.activeSectionId = null;
 
     this.mascotTargetPos = new THREE.Vector3(...CHAPTERS[0].mascot.pos);
     this.mascotTargetRotY = CHAPTERS[0].mascot.rotY;
@@ -110,6 +172,7 @@ export class ShowroomStage {
     this._initScene();
     this._buildShutter();
     this._buildAmbientFloorAO();
+    this._buildWallSignsAndHitboxes();
     this._loadAllShowroomModels();
     this._bindEvents();
     this._syncLoopState();
@@ -154,7 +217,7 @@ export class ShowroomStage {
     this.scene.background = new THREE.Color(0x88b4da);
     this.scene.fog = new THREE.Fog(0x94bee0, 16, 42);
 
-    this.camera = new THREE.PerspectiveCamera(w > 900 ? 48 : 62, w / h, 0.1, 60);
+    this.camera = new THREE.PerspectiveCamera(w > 900 ? 52 : 66, w / h, 0.1, 60);
     this.camera.position.copy(this.desiredCamPos);
     this.camera.lookAt(this.currentCamTarget);
 
@@ -167,7 +230,7 @@ export class ShowroomStage {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this._maxPixelRatio()));
     this.renderer.outputColorSpace = THREE.SRGBColorSpace;
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-    this.renderer.toneMappingExposure = 0.94;
+    this.renderer.toneMappingExposure = 0.95;
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 
@@ -177,7 +240,7 @@ export class ShowroomStage {
     this.scene.environmentIntensity = 0.58;
     pmrem.dispose();
 
-    this.hemiLight = new THREE.HemisphereLight(0xfff8ed, 0x324238, 0.88);
+    this.hemiLight = new THREE.HemisphereLight(0xfff8ed, 0x324238, 0.92);
     this.scene.add(this.hemiLight);
 
     const shadowRes = this.isMobile ? 1024 : 2048;
@@ -211,7 +274,7 @@ export class ShowroomStage {
       shopBackLED.position.set(0.1, 2.88, -3.45);
       this.scene.add(shopBackLED);
     } else {
-      this.hemiLight.intensity = 1.05;
+      this.hemiLight.intensity = 1.08;
     }
 
     const interiorFrontFill = new THREE.DirectionalLight(0xfff6eb, 0.52);
@@ -223,9 +286,7 @@ export class ShowroomStage {
     if (this._lowPowerApplied) return;
     this._lowPowerApplied = true;
     this.renderer.setPixelRatio(1.0);
-    if (this.indoorSpot) {
-      this.indoorSpot.castShadow = false;
-    }
+    if (this.indoorSpot) this.indoorSpot.castShadow = false;
     this.renderer.shadowMap.autoUpdate = false;
     this.renderer.shadowMap.needsUpdate = true;
   }
@@ -289,41 +350,161 @@ export class ShowroomStage {
     this.scene.add(this.shutterGroup);
   }
 
-  _buildHeldBatProp() {
-    const group = new THREE.Group();
-    const batTex = makeHeldM4BatTexture();
-    const willowMat = new THREE.MeshStandardMaterial({ color: 0xd4a46a, roughness: 0.45 });
-    const faceMat = new THREE.MeshStandardMaterial({ map: batTex, roughness: 0.38 });
-    const gripMat = new THREE.MeshStandardMaterial({ color: 0xf97316, roughness: 0.62 });
-    const scoopMat = new THREE.MeshStandardMaterial({ color: 0x1c1917, roughness: 0.7 });
+  /**
+   * Builds 3D wall-mounted section name boards + invisible 3D rack hitboxes
+   * so customers can read section names directly on the shop walls and tap any 3D rack!
+   */
+  _buildWallSignsAndHitboxes() {
+    this.signsGroup = new THREE.Group();
+    this.scene.add(this.signsGroup);
 
-    const blade = new THREE.Mesh(
-      new THREE.BoxGeometry(0.106, 0.52, 0.034),
-      [willowMat, willowMat, willowMat, willowMat, faceMat, willowMat]
-    );
-    blade.position.set(0, -0.32, 0);
-    blade.castShadow = true;
-    group.add(blade);
+    const backingMat = new THREE.MeshStandardMaterial({
+      color: 0xd4a13e,
+      roughness: 0.32,
+      metalness: 0.72,
+    });
 
-    for (const sy of [-0.4, -0.22]) {
-      const scoop = new THREE.Mesh(new THREE.CylinderGeometry(0.032, 0.032, 0.13, 14), scoopMat);
-      scoop.scale.set(1, 1, 0.25);
-      scoop.position.set(0, sy, -0.017);
-      group.add(scoop);
+    const hitMat = new THREE.MeshBasicMaterial({
+      transparent: true,
+      opacity: 0,
+      depthWrite: false,
+    });
+
+    const signSpecs = [
+      {
+        id: '__counter',
+        code: 'DESK',
+        title: 'BILLING & KIT BAG',
+        sub: 'WhatsApp Order & Wholesale Counter',
+        pos: [-1.73, 1.72, -0.05],
+        ry: Math.PI / 2,
+        w: 0.92,
+        h: 0.25,
+      },
+      {
+        id: 'willow-bats',
+        code: '01',
+        title: 'WILLOW BATS',
+        sub: 'Kashmir & English Willow · From ₹1,850',
+        pos: [1.88, 0.94, -0.32],
+        ry: -Math.PI / 2,
+        w: 0.96,
+        h: 0.26,
+      },
+      {
+        id: 'badminton',
+        code: '04',
+        title: 'BADMINTON RACKETS',
+        sub: 'Graphite Frames & Shuttles · From ₹1,150',
+        pos: [1.43, 2.22, -0.32],
+        ry: -Math.PI / 2,
+        w: 0.98,
+        h: 0.26,
+      },
+      {
+        id: 'footballs',
+        code: '05',
+        title: 'FOOTBALL & VOLLEY',
+        sub: 'Match Turf & Court Balls · From ₹890',
+        pos: [1.88, 1.92, -2.14],
+        ry: -Math.PI / 2,
+        w: 0.96,
+        h: 0.26,
+      },
+      {
+        id: 'shoes-jerseys',
+        code: '06',
+        title: 'SHOES & JERSEYS',
+        sub: 'Turf Studs & Squad Kits · From ₹1,450',
+        pos: [1.43, 2.28, -3.52],
+        ry: -Math.PI / 2,
+        w: 0.96,
+        h: 0.26,
+      },
+      {
+        id: 'tennis-bats',
+        code: '02',
+        title: 'M4 SCOOP & TURF BATS',
+        sub: 'Dual-Scoop Tennis Blades · From ₹750',
+        pos: [0.1, 1.4, -4.18],
+        ry: 0,
+        w: 1.04,
+        h: 0.28,
+      },
+      {
+        id: 'trophies-carrom',
+        code: '07',
+        title: 'TROPHIES & CARROM',
+        sub: '22k Gold Cups & Rosewood Boards · ₹1,600+',
+        pos: [1.44, 2.1, -4.19],
+        ry: 0,
+        w: 0.92,
+        h: 0.25,
+      },
+      {
+        id: 'cricket-kit',
+        code: '03',
+        title: 'PADS · GLOVES · HELMETS',
+        sub: 'Full Cricket Kit & Wholesale · ₹2,400+',
+        pos: [-1.26, 2.26, -2.45],
+        ry: Math.PI / 2,
+        w: 1.08,
+        h: 0.28,
+      },
+    ];
+
+    for (const spec of signSpecs) {
+      const group = new THREE.Group();
+      group.position.set(...spec.pos);
+      group.rotation.y = spec.ry;
+
+      const back = new THREE.Mesh(new THREE.BoxGeometry(spec.w + 0.03, spec.h + 0.03, 0.022), backingMat);
+      group.add(back);
+
+      const tex = makeWallSignTexture(spec);
+      const faceMat = new THREE.MeshStandardMaterial({
+        map: tex,
+        roughness: 0.35,
+        metalness: 0.08,
+        emissive: new THREE.Color(0xf0be52),
+        emissiveIntensity: 0.06,
+      });
+      const face = new THREE.Mesh(new THREE.PlaneGeometry(spec.w, spec.h), faceMat);
+      face.position.z = 0.013;
+      face.userData.sectionId = spec.id;
+      back.userData.sectionId = spec.id;
+      group.add(face);
+
+      this.signsGroup.add(group);
+      this.pickables.push(face, back);
+      this.wallSigns.set(spec.id, { group, faceMat });
     }
 
-    const handle = new THREE.Mesh(new THREE.CylinderGeometry(0.016, 0.016, 0.27, 14), gripMat);
-    handle.position.set(0, 0.075, 0);
-    handle.castShadow = true;
-    group.add(handle);
+    // 3D Rack Volume Hitboxes covering every physical shelf & prop cluster
+    const hitboxes = [
+      { id: '__counter', center: [-1.05, 0.85, -0.18], size: [1.25, 1.72, 1.55] },
+      { id: 'willow-bats', center: [1.62, 0.54, -0.32], size: [0.56, 1.02, 2.08] },
+      { id: 'badminton', center: [1.62, 1.68, -0.32], size: [0.56, 1.06, 2.04] },
+      { id: 'footballs', center: [1.64, 1.24, -2.14], size: [0.54, 1.12, 1.58] },
+      { id: 'shoes-jerseys', center: [1.6, 1.88, -3.52], size: [0.56, 0.92, 1.28] },
+      { id: 'shoes-jerseys', center: [1.62, 0.28, -2.14], size: [0.52, 0.52, 1.52] },
+      { id: 'tennis-bats', center: [0.1, 0.78, -4.18], size: [1.92, 1.48, 0.65] },
+      { id: 'trophies-carrom', center: [0.1, 2.75, -4.38], size: [3.65, 0.78, 0.58] },
+      { id: 'trophies-carrom', center: [1.48, 0.95, -4.3], size: [0.86, 1.85, 0.55] },
+      { id: 'trophies-carrom', center: [-1.32, 1.45, -4.35], size: [0.86, 1.15, 0.5] },
+      { id: 'cricket-kit', center: [-1.36, 1.45, -2.52], size: [0.72, 2.65, 3.28] },
+    ];
 
-    group.visible = false;
-    this.scene.add(group);
-    return group;
+    for (const hb of hitboxes) {
+      const box = new THREE.Mesh(new THREE.BoxGeometry(...hb.size), hitMat);
+      box.position.set(...hb.center);
+      box.userData.sectionId = hb.id;
+      this.scene.add(box);
+      this.pickables.push(box);
+    }
   }
 
   _loadAllShowroomModels() {
-    // 1. Exterior Street & Storefront
     this._loadModel('/models/exterior.glb', (gltf) => {
       const ext = gltf.scene;
       ext.traverse((child) => {
@@ -338,7 +519,6 @@ export class ShowroomStage {
       this.scene.add(ext);
     });
 
-    // 2. Interior Showroom & 7 Stocked Racks
     this._loadModel('/models/interior.glb', (gltf) => {
       const interior = gltf.scene;
       interior.traverse((child) => {
@@ -356,7 +536,6 @@ export class ShowroomStage {
       this.scene.add(interior);
     });
 
-    // 3. 3D Gold Sultan Sports Counter Crest
     this._loadModel('/models/emblem.glb', (gltf) => {
       const counterEmblem = gltf.scene;
       counterEmblem.traverse((child) => {
@@ -371,7 +550,6 @@ export class ShowroomStage {
       this.scene.add(counterEmblem);
     });
 
-    // 4. Rigged Store Host (Mansoor)
     this._loadModel('/models/mascot.glb', (gltf) => {
       const model = gltf.scene;
       const box = new THREE.Box3().setFromObject(model);
@@ -384,6 +562,8 @@ export class ShowroomStage {
         if (child.isMesh) {
           child.castShadow = true;
           child.receiveShadow = false;
+          child.userData.sectionId = '__counter';
+          this.pickables.push(child);
           const mats = Array.isArray(child.material) ? child.material : [child.material];
           mats.forEach((m) => {
             if (!m) return;
@@ -391,9 +571,7 @@ export class ShowroomStage {
             m.metalness = 0.0;
             m.envMapIntensity = 0.25;
             m.color.setRGB(0.84, 0.88, 0.92);
-            if (m.normalScale) {
-              m.normalScale.set(0.14, 0.14);
-            }
+            if (m.normalScale) m.normalScale.set(0.14, 0.14);
           });
           if (child.morphTargetDictionary && child.morphTargetInfluences) {
             this.morphMesh = child;
@@ -417,8 +595,6 @@ export class ShowroomStage {
       this.mascotShadow.position.set(this.mascot.position.x, 0.006, this.mascot.position.z);
       this.scene.add(this.mascotShadow);
 
-      this.heldBat = this._buildHeldBatProp();
-
       this.mixer = new THREE.AnimationMixer(this.mascot);
       for (const clip of gltf.animations) {
         this.actions.set(clip.name, this.mixer.clipAction(clip));
@@ -429,19 +605,11 @@ export class ShowroomStage {
       this.mascot.updateMatrixWorld(true);
 
       let minBoneY = Infinity;
-      this.leftHandBone = null;
-      this.rightHandBone = null;
-      this._lhWorld = new THREE.Vector3();
-      this._rhWorld = new THREE.Vector3();
       this.mascot.traverse((obj) => {
-        if (obj.isBone) {
-          if (/Foot|Toe/i.test(obj.name)) {
-            const wp = new THREE.Vector3();
-            obj.getWorldPosition(wp);
-            if (wp.y < minBoneY) minBoneY = wp.y;
-          }
-          if (/LeftHand$/i.test(obj.name)) this.leftHandBone = obj;
-          if (/RightHand$/i.test(obj.name)) this.rightHandBone = obj;
+        if (obj.isBone && /Foot|Toe/i.test(obj.name)) {
+          const wp = new THREE.Vector3();
+          obj.getWorldPosition(wp);
+          if (wp.y < minBoneY) minBoneY = wp.y;
         }
       });
       this._footOffsetY = Number.isFinite(minBoneY) ? -(minBoneY - 0.032) : 0;
@@ -474,26 +642,27 @@ export class ShowroomStage {
       this._isLoopRunning = false;
     } else if (!shouldPause && !this._isLoopRunning) {
       this._isLoopRunning = true;
-      this.clock.getDelta(); // Flush stale elapsed delta
+      this.clock.getDelta();
       this._animate();
     }
   }
 
+  /**
+   * Used for Exterior Onboarding & Shutter-Welcome states before stepping inside.
+   */
   applyStoryState(state) {
+    this.exploreMode = false;
+    this.activeSectionId = null;
     this._lastState = state;
+
     const aspect = window.innerWidth / Math.max(1, window.innerHeight);
     if (aspect < 0.86) {
-      // Lift 3D subjects into the upper open half of mobile portrait screens above the story card
-      const pull = THREE.MathUtils.clamp((0.96 - aspect) * 2.8, 0.5, 1.6);
+      const pull = THREE.MathUtils.clamp((0.96 - aspect) * 2.6, 0.45, 1.45);
       const cp = new THREE.Vector3(...state.camPos);
       const ct = new THREE.Vector3(...state.camTarget);
       const ray = cp.clone().sub(ct).normalize();
       cp.addScaledVector(ray, pull);
-      if (state.camPos[2] < 1.0) {
-        cp.z = Math.min(0.92, cp.z);
-        cp.x = THREE.MathUtils.clamp(cp.x, -1.2, 1.28);
-      }
-      ct.y -= 0.36 * pull;
+      ct.y -= 0.28 * pull;
       this.desiredCamPos.copy(cp);
       this.desiredCamTarget.copy(ct);
     } else {
@@ -502,10 +671,82 @@ export class ShowroomStage {
     }
     this.shutterOpen = state.shutterOpen;
 
-    const mState = state.mascot || state.chapter.mascot;
+    const mState = state.mascot || CHAPTERS[0].mascot;
     this.mascotTargetPos.set(...mState.pos);
     this.mascotTargetRotY = mState.rotY;
     this.mascotDesiredAnim = mState.anim;
+  }
+
+  /**
+   * Activates 360° Free-Swipe Showroom Exploration inside the shop!
+   * Mansoor stands right beside the front-left glass counter welcoming you.
+   */
+  enterExploreMode() {
+    this.exploreMode = true;
+    this.shutterOpen = 1;
+    this.targetStandPos.set(0.22, 1.48, -0.95);
+    // Start looking slightly left toward Mansoor & the Counter while showing the shop!
+    this.targetYaw = shortestYawTarget(this.yaw, 0.72);
+    this.targetPitch = -0.04;
+    this.velYaw = 0;
+
+    this.mascotTargetPos.set(-0.56, 0, -0.86);
+    this.mascotTargetRotY = 0.62;
+    this.mascotDesiredAnim = 'greet';
+  }
+
+  /**
+   * Smoothly rotates & steps along the central turf aisle to frame any chosen 3D section!
+   */
+  focusSection(sectionId) {
+    if (!this.exploreMode) this.enterExploreMode();
+    this.activeSectionId = sectionId;
+
+    const spots = {
+      __counter: { stand: [0.35, 1.48, -0.55], lookAt: [-0.95, 1.05, -0.22], anim: 'clap' },
+      'willow-bats': { stand: [0.05, 1.46, -0.35], lookAt: [1.62, 0.68, -0.32], anim: 'point' },
+      badminton: { stand: [-0.05, 1.48, -0.35], lookAt: [1.58, 1.68, -0.32], anim: 'point' },
+      footballs: { stand: [0.02, 1.48, -1.75], lookAt: [1.64, 1.32, -2.14], anim: 'point' },
+      'shoes-jerseys': { stand: [0.02, 1.48, -2.45], lookAt: [1.58, 1.62, -3.35], anim: 'point' },
+      'tennis-bats': { stand: [0.1, 1.46, -2.05], lookAt: [0.1, 0.96, -4.18], anim: 'point' },
+      'trophies-carrom': { stand: [0.15, 1.5, -2.15], lookAt: [0.45, 2.05, -4.35], anim: 'clap' },
+      'cricket-kit': { stand: [0.22, 1.48, -2.05], lookAt: [-1.42, 1.55, -2.45], anim: 'point' },
+    };
+
+    const spot = spots[sectionId];
+    if (!spot) return;
+
+    this.targetStandPos.set(...spot.stand);
+    const dx = spot.lookAt[0] - spot.stand[0];
+    const dy = spot.lookAt[1] - spot.stand[1];
+    const dz = spot.lookAt[2] - spot.stand[2];
+    const horizDist = Math.max(0.001, Math.hypot(dx, dz));
+    // Camera looks along (-sin(yaw), pitch, -cos(yaw))
+    const desiredYaw = Math.atan2(-dx, -dz);
+    const desiredPitch = THREE.MathUtils.clamp(Math.atan2(dy, horizDist), -0.36, 0.36);
+
+    this.targetYaw = shortestYawTarget(this.yaw, desiredYaw);
+    this.targetPitch = desiredPitch;
+    this.velYaw = 0;
+
+    // Mansoor stays near the counter table and turns warmly toward the customer/rack
+    this.mascotTargetPos.set(-0.56, 0, -0.86);
+    this.mascotTargetRotY = sectionId === '__counter' ? 0.68 : 0.35;
+    this.mascotDesiredAnim = spot.anim || 'greet';
+  }
+
+  _pickSectionAt(clientX, clientY) {
+    const rect = this.canvas.getBoundingClientRect();
+    const nx = ((clientX - rect.left) / Math.max(1, rect.width)) * 2 - 1;
+    const ny = -((clientY - rect.top) / Math.max(1, rect.height)) * 2 + 1;
+    this.raycaster.setFromCamera({ x: nx, y: ny }, this.camera);
+    const hits = this.raycaster.intersectObjects(this.pickables, false);
+    for (const h of hits) {
+      if (h.object?.userData?.sectionId) {
+        return h.object.userData.sectionId;
+      }
+    }
+    return null;
   }
 
   _bindEvents() {
@@ -513,22 +754,96 @@ export class ShowroomStage {
       const w = window.innerWidth;
       const h = window.innerHeight;
       this.isMobile = w <= 860;
-      this.camera.fov = w > 900 ? 48 : 62;
+      this.camera.fov = w > 900 ? 52 : 66;
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
       this.renderer.setSize(w, h);
       this.renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, this._maxPixelRatio()));
-      if (this._lastState) this.applyStoryState(this._lastState);
+      if (!this.exploreMode && this._lastState) {
+        this.applyStoryState(this._lastState);
+      }
     };
+
+    // Swipe-to-look & Tap-on-3D-Object handlers on the WebGL canvas
+    this._onPointerDown = (e) => {
+      if (!this.exploreMode) return;
+      this._isDragging = true;
+      this._dragMoved = 0;
+      this._downX = e.clientX;
+      this._downY = e.clientY;
+      this._lastX = e.clientX;
+      this._lastY = e.clientY;
+      this.velYaw = 0;
+      this.canvas.setPointerCapture?.(e.pointerId);
+    };
+
     this._onPointerMove = (e) => {
-      const nx = (e.clientX / Math.max(1, window.innerWidth)) * 2 - 1;
-      const ny = (e.clientY / Math.max(1, window.innerHeight)) * 2 - 1;
-      this.pointerOffset.set(nx * 0.12, -ny * 0.06);
+      if (!this.exploreMode) return;
+      if (this._isDragging) {
+        const dx = e.clientX - this._lastX;
+        const dy = e.clientY - this._lastY;
+        this._lastX = e.clientX;
+        this._lastY = e.clientY;
+        this._dragMoved += Math.hypot(dx, dy);
+
+        // Natural touch/drag pan: dragging finger left looks right (like turning the shop around you!)
+        const sens = this.isMobile ? 0.0052 : 0.0038;
+        this.targetYaw += dx * sens;
+        this.velYaw = dx * sens * 0.45;
+        this.targetPitch = THREE.MathUtils.clamp(this.targetPitch + dy * sens * 0.65, -0.36, 0.38);
+
+        if (this._dragMoved > 10) {
+          this.onUserSwipe?.();
+        }
+        return;
+      }
+
+      // Desktop hover highlight on 3D racks & wall signs
+      if (!this.isMobile) {
+        const hitId = this._pickSectionAt(e.clientX, e.clientY);
+        this.hoveredSectionId = hitId;
+        this.canvas.style.cursor = hitId ? 'pointer' : 'grab';
+      }
     };
+
+    this._onPointerUp = (e) => {
+      if (!this.exploreMode || !this._isDragging) return;
+      this._isDragging = false;
+      this.canvas.releasePointerCapture?.(e.pointerId);
+
+      // Clean tap (< 9px movement) -> check if user tapped a 3D rack, object, or wall sign!
+      const totalDist = Math.hypot(e.clientX - this._downX, e.clientY - this._downY);
+      if (totalDist < 9 && this._dragMoved < 12) {
+        const hitId = this._pickSectionAt(e.clientX, e.clientY);
+        if (hitId) {
+          this.focusSection(hitId);
+          this.onSelectSection?.(hitId);
+        }
+      }
+    };
+
+    // Mouse wheel / trackpad inside shop: walk gently along the central green turf aisle or pan
+    this._onWheel = (e) => {
+      if (!this.exploreMode) return;
+      if (Math.abs(e.deltaX) > Math.abs(e.deltaY)) {
+        this.targetYaw -= e.deltaX * 0.0022;
+      } else {
+        this.targetStandPos.z = THREE.MathUtils.clamp(
+          this.targetStandPos.z + e.deltaY * 0.0018,
+          -2.55,
+          0.25
+        );
+      }
+      this.onUserSwipe?.();
+    };
+
     this._onVisibility = () => this._syncLoopState();
 
     window.addEventListener('resize', this._onResize);
+    this.canvas.addEventListener('pointerdown', this._onPointerDown);
     window.addEventListener('pointermove', this._onPointerMove, { passive: true });
+    window.addEventListener('pointerup', this._onPointerUp);
+    this.canvas.addEventListener('wheel', this._onWheel, { passive: true });
     document.addEventListener('visibilitychange', this._onVisibility);
   }
 
@@ -540,29 +855,48 @@ export class ShowroomStage {
     const dt = Math.min(rawDt, 0.08);
     this.elapsed += dt;
 
-    // Adaptive <40fps quality governor after initial warm-up
     if (!this._lowPowerApplied && this.elapsed > 2.5 && rawDt > 0 && rawDt < 0.25) {
       this._fpsFrames += 1;
       this._fpsAccum += rawDt;
       if (this._fpsFrames >= 90) {
-        const avgFps = this._fpsFrames / this._fpsAccum;
-        if (avgFps < 40) {
-          this._applyLowPowerFallback();
-        }
+        if (this._fpsFrames / this._fpsAccum < 40) this._applyLowPowerFallback();
         this._fpsFrames = 0;
         this._fpsAccum = 0;
       }
     }
 
-    this.smoothPointer.lerp(this.pointerOffset, Math.min(1, dt * 4));
+    if (this.exploreMode) {
+      if (!this._isDragging && Math.abs(this.velYaw) > 0.0001) {
+        this.targetYaw += this.velYaw;
+        this.velYaw *= Math.pow(0.88, dt * 60);
+      }
 
-    this.camera.position.lerp(this.desiredCamPos, Math.min(1, dt * 6));
-    this.currentCamTarget.lerp(this.desiredCamTarget, Math.min(1, dt * 6));
-    this.camera.lookAt(
-      this.currentCamTarget.x + this.smoothPointer.x,
-      this.currentCamTarget.y + this.smoothPointer.y,
-      this.currentCamTarget.z
-    );
+      this.standPos.lerp(this.targetStandPos, Math.min(1, dt * 6));
+      this.yaw += (this.targetYaw - this.yaw) * Math.min(1, dt * 8.5);
+      this.pitch += (this.targetPitch - this.pitch) * Math.min(1, dt * 8.5);
+
+      this.camera.position.copy(this.standPos);
+      const lookDist = 3.0;
+      const cosP = Math.cos(this.pitch);
+      this.currentCamTarget.set(
+        this.standPos.x - Math.sin(this.yaw) * cosP * lookDist,
+        this.standPos.y + Math.sin(this.pitch) * lookDist,
+        this.standPos.z - Math.cos(this.yaw) * cosP * lookDist
+      );
+      this.camera.lookAt(this.currentCamTarget);
+    } else {
+      this.camera.position.lerp(this.desiredCamPos, Math.min(1, dt * 6));
+      this.currentCamTarget.lerp(this.desiredCamTarget, Math.min(1, dt * 6));
+      this.camera.lookAt(this.currentCamTarget);
+    }
+
+    // Subtle backlit highlight on hovered or active 3D Wall Sign
+    for (const [id, entry] of this.wallSigns.entries()) {
+      const isLit = id === this.hoveredSectionId || id === this.activeSectionId;
+      const targetEmissive = isLit ? 0.34 : 0.07 + 0.03 * Math.sin(this.elapsed * 2.4);
+      entry.faceMat.emissiveIntensity +=
+        (targetEmissive - entry.faceMat.emissiveIntensity) * Math.min(1, dt * 10);
+    }
 
     const indoorFactor = THREE.MathUtils.clamp((2.2 - this.camera.position.z) / 2.2, 0, 1);
     if (this.sunLight) {
@@ -599,7 +933,6 @@ export class ShowroomStage {
         const step = Math.min(dist, walkSpeed * dt);
         this.mascot.position.x += (dx / dist) * step;
         this.mascot.position.z += (dz / dist) * step;
-
         const moveAngle = Math.atan2(dx, dz);
         this.mascot.rotation.y = lerpAngle(this.mascot.rotation.y, moveAngle, Math.min(1, dt * 8));
         this._playAnim('walk', 0.2);
@@ -624,28 +957,6 @@ export class ShowroomStage {
       }
 
       this.mixer?.update(dt);
-
-      if (this.heldBat) {
-        const showBat = dist <= 0.2 && this.mascotDesiredAnim === 'inspect';
-        this.heldBat.visible = showBat;
-        if (showBat) {
-          this.mascot.updateMatrixWorld(true);
-          const yaw = this.mascot.rotation.y;
-          if (this.leftHandBone && this.rightHandBone) {
-            this.leftHandBone.getWorldPosition(this._lhWorld);
-            this.rightHandBone.getWorldPosition(this._rhWorld);
-            this.heldBat.position.lerpVectors(this._lhWorld, this._rhWorld, 0.5);
-            this.heldBat.position.y -= 0.02;
-          } else {
-            this.heldBat.position.set(
-              this.mascot.position.x + Math.sin(yaw) * 0.32,
-              1.12,
-              this.mascot.position.z + Math.cos(yaw) * 0.32
-            );
-          }
-          this.heldBat.rotation.set(-0.62, yaw + 0.32, 0.52);
-        }
-      }
 
       if (this.morphMesh?.morphTargetDictionary && this.morphMesh.morphTargetInfluences) {
         const dict = this.morphMesh.morphTargetDictionary;
@@ -676,7 +987,10 @@ export class ShowroomStage {
   dispose() {
     cancelAnimationFrame(this._rafId);
     window.removeEventListener('resize', this._onResize);
+    this.canvas.removeEventListener('pointerdown', this._onPointerDown);
     window.removeEventListener('pointermove', this._onPointerMove);
+    window.removeEventListener('pointerup', this._onPointerUp);
+    this.canvas.removeEventListener('wheel', this._onWheel);
     document.removeEventListener('visibilitychange', this._onVisibility);
     this.envRT?.dispose();
     this.renderer.dispose();
