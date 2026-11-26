@@ -7,7 +7,7 @@
 # Usage:
 #   powershell -ExecutionPolicy Bypass -File scripts/attach-google-oauth.ps1
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 $Profile = "Lite_aws"
 $Region = "ap-southeast-2"
 $PoolId = "ap-southeast-2_eAwdsaCYa"
@@ -28,7 +28,8 @@ $GoogleClientSecret = [System.Runtime.InteropServices.Marshal]::PtrToStringAuto(
 [System.Runtime.InteropServices.Marshal]::ZeroFreeBSTR($Bstr)
 
 if (-not $GoogleClientId -or -not $GoogleClientSecret) {
-  throw "Both Google Client ID and Client Secret are required."
+  Write-Error "Both Google Client ID and Client Secret are required."
+  exit 1
 }
 
 New-Item -ItemType Directory -Force -Path $TempDir | Out-Null
@@ -44,8 +45,20 @@ try {
   $GoogleClientSecret = $null
 
   Write-Host "1/3 Creating or updating Google Identity Provider in Cognito..." -ForegroundColor Cyan
-  $existing = aws cognito-idp describe-identity-provider --user-pool-id $PoolId --provider-name Google --region $Region --profile $Profile 2>$null
-  if ($LASTEXITCODE -eq 0) {
+  $listRaw = aws cognito-idp list-identity-providers --user-pool-id $PoolId --region $Region --profile $Profile --output json
+  if ($LASTEXITCODE -ne 0) {
+    Write-Error "Could not reach AWS Cognito. Please run 'aws login --profile Lite_aws' and try again."
+    exit 1
+  }
+  $providers = ($listRaw | ConvertFrom-Json).Providers
+  $hasGoogle = $false
+  if ($providers) {
+    foreach ($p in $providers) {
+      if ($p.ProviderName -eq "Google") { $hasGoogle = $true }
+    }
+  }
+
+  if ($hasGoogle) {
     aws cognito-idp update-identity-provider `
       --user-pool-id $PoolId `
       --provider-name Google `
@@ -61,12 +74,17 @@ try {
       --attribute-mapping "email=email,name=name" `
       --region $Region --profile $Profile | Out-Null
   }
+  if ($LASTEXITCODE -ne 0) {
+    Write-Error "Cognito rejected the Google provider setup. Double-check your Client ID and Client Secret."
+    exit 1
+  }
 } finally {
   if (Test-Path $ProviderFile) { Remove-Item $ProviderFile -Force }
 }
 
 Write-Host "2/3 Safely updating App Client (read-modify-write) to enable Google..." -ForegroundColor Cyan
 $clientJson = aws cognito-idp describe-user-pool-client --user-pool-id $PoolId --client-id $ClientId --region $Region --profile $Profile --query "UserPoolClient" --output json
+if ($LASTEXITCODE -ne 0) { exit 1 }
 $clientObj = $clientJson | ConvertFrom-Json
 $clientObj.PSObject.Properties.Remove("ClientSecret")
 $clientObj.PSObject.Properties.Remove("CreationDate")
@@ -76,7 +94,12 @@ $clientObj.SupportedIdentityProviders = @("COGNITO", "Google")
 $clientFile = "$PWD\$TempDir\client_updated.json"
 [System.IO.File]::WriteAllText($clientFile, ($clientObj | ConvertTo-Json -Depth 10), (New-Object System.Text.UTF8Encoding $false))
 aws cognito-idp update-user-pool-client --cli-input-json "file://$TempDir/client_updated.json" --region $Region --profile $Profile | Out-Null
+$updCode = $LASTEXITCODE
 Remove-Item $clientFile -Force -ErrorAction SilentlyContinue
+if ($updCode -ne 0) {
+  Write-Error "Failed to update App Client with Google provider."
+  exit 1
+}
 
 Write-Host "3/3 Updating local .env (VITE_COGNITO_GOOGLE_ENABLED=true)..." -ForegroundColor Cyan
 $envPath = "$PWD\.env"
@@ -94,4 +117,4 @@ if (Test-Path $envPath) {
 
 Write-Host ""
 Write-Host "SUCCESS! Google OAuth is now live in Amazon Cognito." -ForegroundColor Green
-Write-Host "Run 'powershell -ExecutionPolicy Bypass -File scripts/deploy-aws.ps1' to publish the 'Continue with Google' button live!" -ForegroundColor Green
+Write-Host "Next: Run 'powershell -ExecutionPolicy Bypass -File scripts/deploy-aws.ps1' to publish 'Continue with Google' live!" -ForegroundColor Green
