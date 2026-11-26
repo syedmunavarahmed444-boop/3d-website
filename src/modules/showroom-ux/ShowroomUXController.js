@@ -42,6 +42,23 @@ export class ShowroomUXController {
 
     this.cart.subscribe((summary) => this._onCartUpdate(summary));
     this.setPhase('onboarding');
+    this._checkInitialAuthSession();
+  }
+
+  async _checkInitialAuthSession() {
+    try {
+      const oauthVisitor = await this.onboarding.completeOAuthCallbackIfPresent();
+      if (oauthVisitor) {
+        this.setPhase('welcome');
+        return;
+      }
+      const existing = this.onboarding.getVisitor();
+      if (existing && existing.verified) {
+        this.setPhase('welcome');
+      }
+    } catch (err) {
+      this._setAuthStatus(err.message || 'OAuth sign-in did not complete.', true);
+    }
   }
 
   _cacheElements() {
@@ -63,13 +80,19 @@ export class ShowroomUXController {
     this.popoverBody = document.getElementById('popover-body');
 
     this.onboardingGate = document.getElementById('onboarding-gate');
-    this.authTabSignup = document.getElementById('auth-tab-signup');
-    this.authTabLogin = document.getElementById('auth-tab-login');
-    this.authForm = document.getElementById('auth-form');
-    this.authNameField = document.getElementById('auth-name-field');
+    this.oauthLoginBtn = document.getElementById('oauth-login-btn');
+    this.oauthBtnLabel = document.getElementById('oauth-btn-label');
+    this.authEmailForm = document.getElementById('auth-email-form');
+    this.authOtpForm = document.getElementById('auth-otp-form');
     this.authNameInput = document.getElementById('auth-name-input');
-    this.authPhoneInput = document.getElementById('auth-phone-input');
-    this.authSubmitBtn = document.getElementById('auth-submit-btn');
+    this.authEmailInput = document.getElementById('auth-email-input');
+    this.authSendOtpBtn = document.getElementById('auth-send-otp-btn');
+    this.authOtpSentMsg = document.getElementById('auth-otp-sent-msg');
+    this.authOtpInput = document.getElementById('auth-otp-input');
+    this.authVerifyOtpBtn = document.getElementById('auth-verify-otp-btn');
+    this.authResendOtpBtn = document.getElementById('auth-resend-otp-btn');
+    this.authChangeEmailBtn = document.getElementById('auth-change-email-btn');
+    this.authStatusMsg = document.getElementById('auth-status-msg');
     this.guestBtn = document.getElementById('guest-continue-btn');
 
     this.welcomeHero = document.getElementById('welcome-hero');
@@ -140,37 +163,113 @@ export class ShowroomUXController {
     });
   }
 
-  _bindOnboarding() {
-    this.authTabSignup?.addEventListener('click', () => this._setAuthTab('signup'));
-    this.authTabLogin?.addEventListener('click', () => this._setAuthTab('login'));
+  _setAuthStatus(message, isError = false) {
+    if (!this.authStatusMsg) return;
+    if (!message) {
+      this.authStatusMsg.hidden = true;
+      this.authStatusMsg.textContent = '';
+      return;
+    }
+    this.authStatusMsg.hidden = false;
+    this.authStatusMsg.textContent = message;
+    this.authStatusMsg.classList.toggle('is-error', isError);
+  }
 
-    this.authForm?.addEventListener('submit', (e) => {
+  _resetAuthFormToEmailStep() {
+    if (this.authEmailForm) this.authEmailForm.hidden = false;
+    if (this.authOtpForm) this.authOtpForm.hidden = true;
+    if (this.authOtpInput) this.authOtpInput.value = '';
+    this._setAuthStatus('');
+  }
+
+  _bindOnboarding() {
+    const isGoogle = this.onboarding.isGoogleOAuthEnabled();
+    if (this.oauthBtnLabel) {
+      this.oauthBtnLabel.textContent = isGoogle
+        ? 'Continue with Google'
+        : 'Continue with OAuth (AWS Managed Login)';
+    }
+
+    this.oauthLoginBtn?.addEventListener('click', async () => {
+      this._setAuthStatus('Redirecting securely via PKCE OAuth…', false);
+      try {
+        await this.onboarding.startOAuthLogin({ provider: isGoogle ? 'Google' : '' });
+      } catch (err) {
+        this._setAuthStatus(err.message || 'Could not start OAuth sign-in.', true);
+      }
+    });
+
+    this.authEmailForm?.addEventListener('submit', async (e) => {
       e.preventDefault();
       const name = this.authNameInput?.value || '';
-      const phone = this.authPhoneInput?.value || '';
-      if (this.authTab === 'signup') {
-        this.onboarding.signUp({ name, phone });
-      } else {
-        this.onboarding.logIn({ phone, name });
+      const email = this.authEmailInput?.value || '';
+      this._setAuthStatus('');
+      if (this.authSendOtpBtn) {
+        this.authSendOtpBtn.disabled = true;
+        this.authSendOtpBtn.textContent = 'Sending 6-Digit Code…';
       }
-      this.setPhase('welcome');
+      try {
+        const res = await this.onboarding.sendEmailOtp({ email, name });
+        if (this.authOtpSentMsg) {
+          this.authOtpSentMsg.textContent = `We emailed a 6-digit code to ${res.destination}. Enter it below to lift the shutter:`;
+        }
+        if (this.authEmailForm) this.authEmailForm.hidden = true;
+        if (this.authOtpForm) this.authOtpForm.hidden = false;
+        this.authOtpInput?.focus();
+      } catch (err) {
+        this._setAuthStatus(err.message || 'Could not send email code. Please check your email.', true);
+      } finally {
+        if (this.authSendOtpBtn) {
+          this.authSendOtpBtn.disabled = false;
+          this.authSendOtpBtn.textContent = 'Send 6-Digit Email OTP →';
+        }
+      }
+    });
+
+    this.authOtpForm?.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const code = this.authOtpInput?.value || '';
+      this._setAuthStatus('');
+      if (this.authVerifyOtpBtn) {
+        this.authVerifyOtpBtn.disabled = true;
+        this.authVerifyOtpBtn.textContent = 'Verifying Code…';
+      }
+      try {
+        await this.onboarding.verifyEmailOtp(code);
+        this._resetAuthFormToEmailStep();
+        this.setPhase('welcome');
+      } catch (err) {
+        this._setAuthStatus(err.message || 'Invalid or expired 6-digit code. Try again.', true);
+      } finally {
+        if (this.authVerifyOtpBtn) {
+          this.authVerifyOtpBtn.disabled = false;
+          this.authVerifyOtpBtn.textContent = 'Verify Code & Open Shutter →';
+        }
+      }
+    });
+
+    this.authResendOtpBtn?.addEventListener('click', async () => {
+      const email = this.authEmailInput?.value || '';
+      const name = this.authNameInput?.value || '';
+      this._setAuthStatus('Sending a fresh 6-digit code…', false);
+      try {
+        const res = await this.onboarding.sendEmailOtp({ email, name });
+        this._setAuthStatus(`Fresh code sent to ${res.destination}.`, false);
+      } catch (err) {
+        this._setAuthStatus(err.message || 'Could not resend code.', true);
+      }
+    });
+
+    this.authChangeEmailBtn?.addEventListener('click', () => {
+      this._resetAuthFormToEmailStep();
+      this.authEmailInput?.focus();
     });
 
     this.guestBtn?.addEventListener('click', () => {
+      this._resetAuthFormToEmailStep();
       this.onboarding.continueAsGuest();
       this.setPhase('welcome');
     });
-  }
-
-  _setAuthTab(tab) {
-    this.authTab = tab;
-    const isSignup = tab === 'signup';
-    this.authTabSignup?.classList.toggle('is-active', isSignup);
-    this.authTabLogin?.classList.toggle('is-active', !isSignup);
-    if (this.authNameField) this.authNameField.hidden = !isSignup;
-    if (this.authSubmitBtn) {
-      this.authSubmitBtn.textContent = isSignup ? 'Create Free Pass & Open Shutter →' : 'Sign In & Open Shutter →';
-    }
   }
 
   _bindWelcome() {
@@ -196,8 +295,9 @@ export class ShowroomUXController {
       this.togglePopover('bag');
     });
 
-    this.signOutBtn?.addEventListener('click', () => {
-      this.onboarding.signOut();
+    this.signOutBtn?.addEventListener('click', async () => {
+      await this.onboarding.signOut();
+      this._resetAuthFormToEmailStep();
       this.closeObjectPopup();
       this.closePopover();
       this.setPhase('onboarding');

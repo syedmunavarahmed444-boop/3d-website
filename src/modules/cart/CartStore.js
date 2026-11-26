@@ -119,9 +119,10 @@ export class CartStore {
   buildMemoText(visitor = null) {
     const { lines, totalPacks, totalUnits, totalAmount } = this.getSummary();
     const greeting = BRAND.whatsappGreetingName || BRAND.owner;
+    const contactDetail = visitor?.phone || visitor?.email || '';
     const customerTag =
       visitor && visitor.name && visitor.name !== 'Guest'
-        ? `Customer: ${visitor.name}${visitor.phone ? ` (${visitor.phone})` : ''}`
+        ? `Customer: ${visitor.name}${contactDetail ? ` (${contactDetail})` : ''}`
         : '';
 
     if (lines.length === 0) {

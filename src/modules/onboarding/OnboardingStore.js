@@ -1,20 +1,21 @@
-const VISITOR_STORAGE_KEY = 'sultan_sports_visitor_v1';
+import { CognitoAuthClient } from './CognitoAuthClient.js';
+
+const VISITOR_STORAGE_KEY = 'sultan_sports_visitor_v2';
 
 /**
- * Modular Onboarding & Auth Store.
- * Currently uses a fast generic local session so the full 3D UX can be tested immediately.
- * Designed with a clean adapter boundary so Firebase Auth, AWS Cognito, or a custom
- * onboarding flow can be swapped in later without touching the 3D showroom or catalog.
+ * Modular Onboarding & Authentication Store backed by real Amazon Cognito
+ * (Passwordless 6-Digit Email OTP + OAuth 2.0 Authorization Code PKCE + Guest Browse).
  */
 export class OnboardingStore {
   constructor() {
+    this.cognito = new CognitoAuthClient();
     this.visitor = this._load();
     this.listeners = new Set();
   }
 
   _load() {
     try {
-      const raw = localStorage.getItem(VISITOR_STORAGE_KEY);
+      const raw = sessionStorage.getItem(VISITOR_STORAGE_KEY);
       if (!raw) return null;
       const parsed = JSON.parse(raw);
       if (parsed && typeof parsed.name === 'string') return parsed;
@@ -27,9 +28,9 @@ export class OnboardingStore {
   _save() {
     try {
       if (this.visitor) {
-        localStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(this.visitor));
+        sessionStorage.setItem(VISITOR_STORAGE_KEY, JSON.stringify(this.visitor));
       } else {
-        localStorage.removeItem(VISITOR_STORAGE_KEY);
+        sessionStorage.removeItem(VISITOR_STORAGE_KEY);
       }
     } catch {
       // Ignore storage errors
@@ -51,44 +52,49 @@ export class OnboardingStore {
     return this.visitor;
   }
 
-  signUp({ name, phone }) {
-    const cleanName = (name || '').trim() || 'Guest Player';
-    const cleanPhone = (phone || '').replace(/[^\d+\s-]/g, '').trim();
-    this.visitor = {
-      name: cleanName,
-      phone: cleanPhone,
-      mode: 'signup',
-      signedInAt: Date.now(),
-    };
+  isGoogleOAuthEnabled() {
+    return this.cognito.isGoogleEnabled();
+  }
+
+  async sendEmailOtp({ email, name }) {
+    return this.cognito.sendEmailOtp({ email, name });
+  }
+
+  async verifyEmailOtp(code) {
+    const verifiedVisitor = await this.cognito.verifyEmailOtp(code);
+    this.visitor = verifiedVisitor;
     this._notify();
     return this.visitor;
   }
 
-  logIn({ phone, name }) {
-    const cleanPhone = (phone || '').replace(/[^\d+\s-]/g, '').trim();
-    const cleanName = (name || '').trim() || (cleanPhone ? `Player ${cleanPhone.slice(-4)}` : 'Returning Player');
-    this.visitor = {
-      name: cleanName,
-      phone: cleanPhone,
-      mode: 'login',
-      signedInAt: Date.now(),
-    };
-    this._notify();
-    return this.visitor;
+  async startOAuthLogin({ provider = '' } = {}) {
+    return this.cognito.startOAuthLogin({ provider });
+  }
+
+  async completeOAuthCallbackIfPresent() {
+    const oauthVisitor = await this.cognito.handleOAuthCallbackIfPresent();
+    if (oauthVisitor) {
+      this.visitor = oauthVisitor;
+      this._notify();
+    }
+    return oauthVisitor;
   }
 
   continueAsGuest() {
     this.visitor = {
       name: 'Guest',
+      email: '',
       phone: '',
       mode: 'guest',
+      verified: false,
       signedInAt: Date.now(),
     };
     this._notify();
     return this.visitor;
   }
 
-  signOut() {
+  async signOut() {
+    await this.cognito.signOut();
     this.visitor = null;
     this._notify();
   }

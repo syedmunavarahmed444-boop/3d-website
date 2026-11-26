@@ -156,35 +156,68 @@
       <div id="popover-body" class="popover-body"></div>
     </section>
 
-    <!-- STAGE 1: Generic Onboarding / Signup-Login Gate -->
-    <section id="onboarding-gate" class="onboarding-gate" aria-label="Welcome Sign Up and Sign In">
+    <!-- STAGE 1: Real Amazon Cognito Email 6-Digit OTP + OAuth 2.0 PKCE Gate -->
+    <section id="onboarding-gate" class="onboarding-gate" aria-label="Welcome Sign In">
       <div class="auth-card">
         <span class="auth-badge">APSARA CIRCLE, KADAPA · 4.9 ★</span>
         <h1 class="auth-title">Welcome to Sultan Sports</h1>
         <p class="auth-desc">
-          Sign up or sign in to lift our 3D showroom shutter, swipe freely around every section, and tap any 3D item for Retail &amp; Wholesale prices.
+          Sign in with a real 6-digit Email OTP or OAuth to lift our 3D shutter, swipe around the showroom, and tap any sports item for prices.
         </p>
 
-        <div class="auth-tabs" role="tablist">
-          <button id="auth-tab-signup" type="button" class="auth-tab is-active" role="tab">Sign Up</button>
-          <button id="auth-tab-login" type="button" class="auth-tab" role="tab">Log In</button>
-        </div>
+        <!-- Primary OAuth 2.0 + PKCE Sign-In Button (Google once attached / AWS Managed Login v2) -->
+        <button id="oauth-login-btn" type="button" class="oauth-btn">
+          <span class="oauth-g-badge" aria-hidden="true">G</span>
+          <span id="oauth-btn-label">Continue with OAuth Sign-In</span>
+        </button>
 
-        <form id="auth-form">
-          <div id="auth-name-field" class="auth-field">
-            <label for="auth-name-input">Your Name</label>
-            <input id="auth-name-input" type="text" placeholder="e.g. Rahul / Kadapa XI Captain" autocomplete="name" />
+        <div class="auth-divider">or instant 6-digit Email OTP (no password)</div>
+
+        <!-- Step 1: Enter Name & Email to Receive Real 6-Digit Cognito OTP -->
+        <form id="auth-email-form">
+          <div class="auth-field">
+            <label for="auth-name-input">Your Name (optional)</label>
+            <input id="auth-name-input" type="text" placeholder="e.g. Rahul / Kadapa XI" autocomplete="name" />
           </div>
           <div class="auth-field">
-            <label for="auth-phone-input">Phone / WhatsApp Number</label>
-            <input id="auth-phone-input" type="tel" placeholder="+91 98765 43210" autocomplete="tel" />
+            <label for="auth-email-input">Email Address</label>
+            <input id="auth-email-input" type="email" placeholder="you@gmail.com" autocomplete="email" required />
           </div>
-          <button id="auth-submit-btn" type="submit" class="auth-submit-btn">
-            Create Free Pass &amp; Open Shutter →
+          <button id="auth-send-otp-btn" type="submit" class="auth-submit-btn">
+            Send 6-Digit Email OTP →
           </button>
         </form>
 
-        <div class="auth-divider">or browse right away</div>
+        <!-- Step 2: Enter the Real 6-Digit OTP Emailed by Amazon Cognito -->
+        <form id="auth-otp-form" hidden>
+          <p id="auth-otp-sent-msg" class="auth-otp-sent-msg">
+            Enter the 6-digit verification code sent to your email.
+          </p>
+          <div class="auth-field">
+            <label for="auth-otp-input">6-Digit Email Code</label>
+            <input
+              id="auth-otp-input"
+              type="text"
+              inputmode="numeric"
+              pattern="[0-9]{6}"
+              maxlength="6"
+              placeholder="123456"
+              autocomplete="one-time-code"
+              required
+            />
+          </div>
+          <button id="auth-verify-otp-btn" type="submit" class="auth-submit-btn">
+            Verify Code &amp; Open Shutter →
+          </button>
+          <div class="auth-otp-links">
+            <button id="auth-resend-otp-btn" type="button" class="auth-link-btn">Resend Code</button>
+            <button id="auth-change-email-btn" type="button" class="auth-link-btn">Change Email</button>
+          </div>
+        </form>
+
+        <div id="auth-status-msg" class="auth-status-msg" role="alert" hidden></div>
+
+        <div class="auth-divider">or explore right away</div>
         <button id="guest-continue-btn" type="button" class="guest-btn">Continue as Guest →</button>
       </div>
     </section>
