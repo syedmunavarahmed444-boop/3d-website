@@ -41,10 +41,35 @@ export const BRAND = {
     'https://www.google.com/maps/search/?api=1&query=Sultan+Sports+Kadapa+Apsara+Theatre+Chinna+Chauku+Kadapa+516002',
 };
 
+export const WALL_ZONES = [
+  {
+    id: 'wall-cricket',
+    wall: 'Straight-Ahead Main Wall',
+    title: 'Cricket Zone (100% Dedicated)',
+    categories: ['willow-bats', 'tennis-bats', 'cricket-kit'],
+    note: 'Modular draft layout — ready to update with your finalized Cricket item list.',
+  },
+  {
+    id: 'wall-court-field',
+    wall: 'Right Wall (3 Bays)',
+    title: 'Court & Field Sports',
+    categories: ['badminton', 'footballs', 'basketball-training'],
+    note: 'Badminton, Football/Volleyball & Basketball/Training (placeholder 3rd sport — easy to swap later).',
+  },
+  {
+    id: 'wall-apparel-awards',
+    wall: 'Left Wall (Counter + 2 Bays)',
+    title: 'Billing Counter, Apparel & Awards',
+    categories: ['shoes-jerseys', 'trophies-carrom'],
+    note: 'Glass Billing Counter + Team Jerseys/Shoes + 22k Gold Trophies & Rosewood Carrom.',
+  },
+];
+
 export const PRODUCTS = [
   {
     id: 'willow-bats',
     index: '01',
+    wallZone: 'wall-cricket',
     shortTab: 'Bats',
     image: '/products/willow-bats.webp',
     gallery: [
@@ -55,8 +80,8 @@ export const PRODUCTS = [
     name: 'Kashmir & English Willow Bats',
     subtitle: 'Hand-picked willow blades with balanced sweet spot & neon grip',
     retailPrice: 1850,
-    focusCam: { pos: [-0.24, 1.44, 0.58], target: [1.44, 0.96, -1.52] },
-    mascot: { pos: [-0.62, 0, -2.35], rotY: 0.65, anim: 'point' },
+    focusCam: { pos: [0.1, 1.48, -1.55], target: [0.1, 1.38, -4.38] },
+    mascot: { pos: [-0.56, 0, -0.86], rotY: 0.35, anim: 'point' },
     packs: [
       { label: '1 Pc (Retail)', qty: 1, price: 1850 },
       { label: '6 Pcs (Club)', qty: 6, price: 9900 },
@@ -66,6 +91,7 @@ export const PRODUCTS = [
   {
     id: 'tennis-bats',
     index: '02',
+    wallZone: 'wall-cricket',
     shortTab: 'Scoop',
     image: '/products/tennis-bats.webp',
     gallery: [
@@ -73,11 +99,11 @@ export const PRODUCTS = [
       { src: '/products/gallery/tennis-bats-2.webp', caption: 'Heavy-Duty Turf Tennis Cricket Ball' },
       { src: '/products/gallery/tennis-bats-3.webp', caption: 'Hand-Picked Seasoned Blade Profile' },
     ],
-    name: 'Hard-Tennis & Scoop Bats',
-    subtitle: 'Trending M4 Beast Edition dual-scoop blades for Kadapa turf matches',
+    name: 'Scoop Bats, Stumps & Cricket Balls',
+    subtitle: 'M4 Beast dual-scoop bats, varnished wooden stumps, bails & leather/tennis balls',
     retailPrice: 750,
-    focusCam: { pos: [0.02, 1.38, -0.65], target: [0.16, 0.88, -4.15] },
-    mascot: { pos: [0.92, 0, -2.88], rotY: -0.52, anim: 'point' },
+    focusCam: { pos: [0.1, 1.32, -1.85], target: [0.1, 0.65, -4.06] },
+    mascot: { pos: [-0.56, 0, -0.86], rotY: 0.35, anim: 'point' },
     packs: [
       { label: '1 Pc (Retail)', qty: 1, price: 750 },
       { label: '6 Pcs (Pack)', qty: 6, price: 4100 },
@@ -87,6 +113,7 @@ export const PRODUCTS = [
   {
     id: 'cricket-kit',
     index: '03',
+    wallZone: 'wall-cricket',
     shortTab: 'Kits',
     image: '/products/cricket-kit.webp',
     gallery: [
@@ -95,10 +122,10 @@ export const PRODUCTS = [
       { src: '/products/gallery/cricket-kit-3.webp', caption: 'Pro Batting Gloves & Navy Helmet' },
     ],
     name: 'Cricket Pads, Gloves & Helmets',
-    subtitle: '3-bolster leg guards, sausage-roll gloves & steel-grill pro helmets',
+    subtitle: '7-cane leg guards, sausage-roll gloves, steel-grille helmets & bulk sacks',
     retailPrice: 2400,
-    focusCam: { pos: [0.84, 1.48, -0.06], target: [-1.18, 1.36, -2.55] },
-    mascot: { pos: [-0.46, 0, -3.38], rotY: 0.42, anim: 'point' },
+    focusCam: { pos: [0.12, 1.48, -1.55], target: [-1.1, 1.42, -4.4] },
+    mascot: { pos: [-0.56, 0, -0.86], rotY: 0.35, anim: 'point' },
     packs: [
       { label: '1 Set (Retail)', qty: 1, price: 2400 },
       { label: '5 Sets (Academy)', qty: 5, price: 10800 },
@@ -108,7 +135,8 @@ export const PRODUCTS = [
   {
     id: 'badminton',
     index: '04',
-    shortTab: 'Rackets',
+    wallZone: 'wall-court-field',
+    shortTab: 'Badminton',
     image: '/products/badminton.webp',
     gallery: [
       { src: '/products/gallery/badminton-1.webp', caption: 'Strung Graphite Racket & Feathered Shuttle' },
@@ -118,8 +146,8 @@ export const PRODUCTS = [
     name: 'Badminton Rackets & Shuttles',
     subtitle: 'Graphite strung frames, feathered shuttles & Mavis tournament tubes',
     retailPrice: 1150,
-    focusCam: { pos: [-0.36, 1.48, 0.52], target: [1.55, 1.42, -0.65] },
-    mascot: { pos: [0.55, 0, -2.45], rotY: 0.25, anim: 'point' },
+    focusCam: { pos: [-0.08, 1.48, -0.17], target: [1.66, 1.48, -0.17] },
+    mascot: { pos: [-0.56, 0, -0.86], rotY: 0.35, anim: 'point' },
     packs: [
       { label: '1 Racket', qty: 1, price: 1150 },
       { label: '6 Rackets (Club)', qty: 6, price: 6200 },
@@ -129,7 +157,8 @@ export const PRODUCTS = [
   {
     id: 'footballs',
     index: '05',
-    shortTab: 'Balls',
+    wallZone: 'wall-court-field',
+    shortTab: 'Football',
     image: '/products/footballs.webp',
     gallery: [
       { src: '/products/gallery/footballs-1.webp', caption: 'Stitched Match Football on Green Turf' },
@@ -139,8 +168,8 @@ export const PRODUCTS = [
     name: 'Match Footballs & Volleyballs',
     subtitle: 'Stitched leather turf footballs & 18-panel tournament volleyballs',
     retailPrice: 890,
-    focusCam: { pos: [-0.32, 1.44, -0.55], target: [1.52, 1.18, -2.35] },
-    mascot: { pos: [0.45, 0, -3.18], rotY: 0.32, anim: 'point' },
+    focusCam: { pos: [-0.08, 1.48, -1.76], target: [1.65, 1.32, -1.76] },
+    mascot: { pos: [-0.56, 0, -0.86], rotY: 0.35, anim: 'point' },
     packs: [
       { label: '1 Ball (Retail)', qty: 1, price: 890 },
       { label: '6 Balls (Pack)', qty: 6, price: 4800 },
@@ -148,8 +177,31 @@ export const PRODUCTS = [
     ],
   },
   {
-    id: 'shoes-jerseys',
+    id: 'basketball-training',
     index: '06',
+    wallZone: 'wall-court-field',
+    shortTab: 'Basketball',
+    image: '/products/basketball-training.webp',
+    gallery: [
+      { src: '/products/gallery/basketball-training-1.webp', caption: 'Official Size-7 Pebbled Match Basketball' },
+      { src: '/products/gallery/basketball-training-2.webp', caption: 'Indoor/Outdoor Composite Leather Basketball' },
+      { src: '/products/gallery/basketball-training-3.webp', caption: 'High-Visibility Agility & Speed Training Cones' },
+    ],
+    name: 'Basketballs & Training Gear',
+    subtitle: 'Size-7 match basketballs, agility speed cones & academy fitness kits',
+    retailPrice: 950,
+    focusCam: { pos: [-0.08, 1.46, -3.28], target: [1.65, 1.28, -3.35] },
+    mascot: { pos: [-0.56, 0, -0.86], rotY: 0.35, anim: 'point' },
+    packs: [
+      { label: '1 Ball / Cone Set', qty: 1, price: 950 },
+      { label: '6 Balls (Court)', qty: 6, price: 5200 },
+      { label: '12 Pcs (Academy)', qty: 12, price: 9800 },
+    ],
+  },
+  {
+    id: 'shoes-jerseys',
+    index: '07',
+    wallZone: 'wall-apparel-awards',
     shortTab: 'Jerseys',
     image: '/products/shoes-jerseys.webp',
     gallery: [
@@ -157,11 +209,11 @@ export const PRODUCTS = [
       { src: '/products/gallery/shoes-jerseys-2.webp', caption: 'Breathable Mesh Sports Shoe (Top View)' },
       { src: '/products/gallery/shoes-jerseys-3.webp', caption: 'Vibrant Multi-Color Training Footwear' },
     ],
-    name: 'Sports Shoes & Team Jerseys',
-    subtitle: 'Turf studs, court sneakers & custom sublimated Kadapa squad kits',
+    name: 'Team Jerseys & Sports Shoes',
+    subtitle: 'Custom sublimated Kadapa squad kits, turf studs & court sneakers',
     retailPrice: 1450,
-    focusCam: { pos: [-0.25, 1.48, -1.05], target: [1.35, 1.38, -3.62] },
-    mascot: { pos: [-0.45, 0, -3.25], rotY: 0.55, anim: 'point' },
+    focusCam: { pos: [0.28, 1.46, -1.7], target: [-1.5, 1.32, -1.7] },
+    mascot: { pos: [-0.56, 0, -0.86], rotY: 0.35, anim: 'point' },
     packs: [
       { label: '1 Pair / Kit', qty: 1, price: 1450 },
       { label: '11 Kits (Team)', qty: 11, price: 13800 },
@@ -170,8 +222,9 @@ export const PRODUCTS = [
   },
   {
     id: 'trophies-carrom',
-    index: '07',
-    shortTab: 'Cups',
+    index: '08',
+    wallZone: 'wall-apparel-awards',
+    shortTab: 'Trophies',
     image: '/products/trophies-carrom.webp',
     gallery: [
       { src: '/products/gallery/trophies-carrom-1.webp', caption: '22k Gold-Finish Championship Trophy Cup' },
@@ -181,8 +234,8 @@ export const PRODUCTS = [
     name: 'Trophies, Medals & Carrom Boards',
     subtitle: '22k gold tournament cups, wooden plaques & rosewood match carrom',
     retailPrice: 1600,
-    focusCam: { pos: [0.02, 1.52, -0.82], target: [0.35, 1.72, -4.42] },
-    mascot: { pos: [0.82, 0, -2.95], rotY: -0.38, anim: 'clap' },
+    focusCam: { pos: [0.28, 1.48, -3.25], target: [-1.5, 1.42, -3.32] },
+    mascot: { pos: [-0.56, 0, -0.86], rotY: 0.35, anim: 'clap' },
     packs: [
       { label: '1 Trophy / Board', qty: 1, price: 1600 },
       { label: '10 Trophies (Event)', qty: 10, price: 6500 },

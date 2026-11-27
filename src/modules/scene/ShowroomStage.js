@@ -374,6 +374,101 @@ export class ShowroomStage {
     });
 
     const signSpecs = [
+      // === WALL 1 (STRAIGHT-AHEAD MAIN WALL): 100% DEDICATED CRICKET ZONE ===
+      {
+        id: 'willow-bats',
+        code: 'WALL 1',
+        title: 'CRICKET ZONE',
+        sub: 'Willow Bats · Scoop Bats · Stumps · Pads · Gloves · Helmets',
+        pos: [0.1, 2.94, -4.64],
+        ry: 0,
+        w: 1.96,
+        h: 0.34,
+      },
+      {
+        id: 'cricket-kit',
+        code: '03',
+        title: 'CRICKET PROTECTION',
+        sub: 'Pads · Helmets · Kits · ₹2,400+',
+        pos: [-1.29, 2.4, -4.185],
+        ry: 0,
+        w: 0.8,
+        h: 0.22,
+      },
+      {
+        id: 'willow-bats',
+        code: '01',
+        title: 'WILLOW BATS',
+        sub: 'Kashmir & English · From ₹1,850',
+        pos: [-0.34, 2.4, -4.185],
+        ry: 0,
+        w: 0.86,
+        h: 0.22,
+      },
+      {
+        id: 'tennis-bats',
+        code: '02',
+        title: 'SCOOP & STUMPS',
+        sub: 'M4 Scoop · Stumps · Balls · ₹750+',
+        pos: [0.58, 2.4, -4.185],
+        ry: 0,
+        w: 0.86,
+        h: 0.22,
+      },
+      {
+        id: 'cricket-kit',
+        code: 'BULK',
+        title: 'GLOVES & SACKS',
+        sub: 'Gloves · Balls · Wholesale Packs',
+        pos: [1.47, 2.4, -4.185],
+        ry: 0,
+        w: 0.78,
+        h: 0.22,
+      },
+
+      // === WALL 2 (RIGHT WALL): COURT & FIELD SPORTS (3 CLEAN BAYS) ===
+      {
+        id: 'footballs',
+        code: 'WALL 2',
+        title: 'COURT & FIELD SPORTS',
+        sub: 'Badminton · Football · Volleyball · Basketball',
+        pos: [1.89, 2.94, -1.68],
+        ry: -Math.PI / 2,
+        w: 1.92,
+        h: 0.32,
+      },
+      {
+        id: 'badminton',
+        code: '04',
+        title: 'BADMINTON & RACKETS',
+        sub: 'Graphite Frames & Shuttles · ₹1,150+',
+        pos: [1.435, 2.4, -0.16],
+        ry: -Math.PI / 2,
+        w: 1.2,
+        h: 0.25,
+      },
+      {
+        id: 'footballs',
+        code: '05',
+        title: 'FOOTBALL & VOLLEY',
+        sub: 'Match Turf & Court Balls · ₹890+',
+        pos: [1.435, 2.4, -1.68],
+        ry: -Math.PI / 2,
+        w: 1.2,
+        h: 0.25,
+      },
+      {
+        id: 'basketball-training',
+        code: '06',
+        title: 'BASKETBALL & GEAR',
+        sub: 'Size-7 Match Balls & Cones · ₹950+',
+        pos: [1.435, 2.4, -3.2],
+        ry: -Math.PI / 2,
+        w: 1.2,
+        h: 0.25,
+      },
+
+      // === WALL 3 (LEFT WALL): BILLING COUNTER, APPAREL/SHOES & TROPHIES/CARROM ===
       {
         id: '__counter',
         code: 'DESK',
@@ -385,74 +480,34 @@ export class ShowroomStage {
         h: 0.25,
       },
       {
-        id: 'willow-bats',
-        code: '01',
-        title: 'WILLOW BATS',
-        sub: 'Kashmir & English Willow · From ₹1,850',
-        pos: [1.88, 0.94, -0.32],
-        ry: -Math.PI / 2,
-        w: 0.96,
-        h: 0.26,
-      },
-      {
-        id: 'badminton',
-        code: '04',
-        title: 'BADMINTON RACKETS',
-        sub: 'Graphite Frames & Shuttles · From ₹1,150',
-        pos: [1.43, 2.22, -0.32],
-        ry: -Math.PI / 2,
-        w: 0.98,
-        h: 0.26,
-      },
-      {
-        id: 'footballs',
-        code: '05',
-        title: 'FOOTBALL & VOLLEY',
-        sub: 'Match Turf & Court Balls · From ₹890',
-        pos: [1.88, 1.92, -2.14],
-        ry: -Math.PI / 2,
-        w: 0.96,
-        h: 0.26,
+        id: 'shoes-jerseys',
+        code: 'WALL 3',
+        title: 'APPAREL & AWARDS',
+        sub: 'Team Jerseys · Shoes · Trophies · Carrom',
+        pos: [-1.73, 2.94, -1.65],
+        ry: Math.PI / 2,
+        w: 1.46,
+        h: 0.28,
       },
       {
         id: 'shoes-jerseys',
-        code: '06',
-        title: 'SHOES & JERSEYS',
-        sub: 'Turf Studs & Squad Kits · From ₹1,450',
-        pos: [1.43, 2.28, -3.52],
-        ry: -Math.PI / 2,
-        w: 0.96,
-        h: 0.26,
-      },
-      {
-        id: 'tennis-bats',
-        code: '02',
-        title: 'M4 SCOOP & TURF BATS',
-        sub: 'Dual-Scoop Tennis Blades · From ₹750',
-        pos: [0.1, 1.4, -4.18],
-        ry: 0,
-        w: 1.04,
-        h: 0.28,
-      },
-      {
-        id: 'trophies-carrom',
         code: '07',
-        title: 'TROPHIES & CARROM',
-        sub: '22k Gold Cups & Rosewood Boards · ₹1,600+',
-        pos: [1.44, 2.1, -4.19],
-        ry: 0,
-        w: 0.92,
+        title: 'JERSEYS & SHOES',
+        sub: 'Squad Kits & Turf Studs · ₹1,450+',
+        pos: [-1.265, 2.4, -1.65],
+        ry: Math.PI / 2,
+        w: 1.2,
         h: 0.25,
       },
       {
-        id: 'cricket-kit',
-        code: '03',
-        title: 'PADS · GLOVES · HELMETS',
-        sub: 'Full Cricket Kit & Wholesale · ₹2,400+',
-        pos: [-1.26, 2.26, -2.45],
+        id: 'trophies-carrom',
+        code: '08',
+        title: 'TROPHIES & CARROM',
+        sub: '22k Gold Cups & Rosewood Boards · ₹1,600+',
+        pos: [-1.265, 2.4, -3.19],
         ry: Math.PI / 2,
-        w: 1.08,
-        h: 0.28,
+        w: 1.2,
+        h: 0.25,
       },
     ];
 
@@ -480,22 +535,29 @@ export class ShowroomStage {
 
       this.signsGroup.add(group);
       this.pickables.push(face, back);
-      this.wallSigns.set(spec.id, { group, faceMat });
+      const list = this.wallSigns.get(spec.id) || [];
+      list.push({ group, faceMat });
+      this.wallSigns.set(spec.id, list);
     }
 
-    // 3D Rack Volume Hitboxes covering every physical shelf & prop cluster
+    // 3D Rack Volume Hitboxes aligned millimeter-for-millimeter with the 3-wall category bays
     const hitboxes = [
+      // Wall 1: 100% Dedicated Cricket Wall
+      { id: 'willow-bats', center: [0.1, 1.38, -4.38], size: [1.9, 1.4, 0.56] },
+      { id: 'tennis-bats', center: [0.1, 0.45, -4.02], size: [1.98, 0.92, 0.68] },
+      { id: 'tennis-bats', center: [-0.96, 0.22, -3.56], size: [0.56, 0.44, 0.56] },
+      { id: 'cricket-kit', center: [-1.29, 1.25, -4.38], size: [0.86, 2.55, 0.58] },
+      { id: 'cricket-kit', center: [1.47, 1.25, -4.35], size: [0.84, 2.55, 0.64] },
+
+      // Wall 2: Right Wall (Badminton R1, Football/Volley R2, Basketball/Training R3)
+      { id: 'badminton', center: [1.66, 1.25, -0.16], size: [0.58, 2.55, 1.5] },
+      { id: 'footballs', center: [1.66, 1.25, -1.68], size: [0.58, 2.55, 1.5] },
+      { id: 'basketball-training', center: [1.66, 1.25, -3.2], size: [0.58, 2.55, 1.5] },
+
+      // Wall 3: Left Wall (Counter, Jerseys & Shoes L2, Trophies & Carrom L3)
       { id: '__counter', center: [-1.05, 0.85, -0.18], size: [1.25, 1.72, 1.55] },
-      { id: 'willow-bats', center: [1.62, 0.54, -0.32], size: [0.56, 1.02, 2.08] },
-      { id: 'badminton', center: [1.62, 1.68, -0.32], size: [0.56, 1.06, 2.04] },
-      { id: 'footballs', center: [1.64, 1.24, -2.14], size: [0.54, 1.12, 1.58] },
-      { id: 'shoes-jerseys', center: [1.6, 1.88, -3.52], size: [0.56, 0.92, 1.28] },
-      { id: 'shoes-jerseys', center: [1.62, 0.28, -2.14], size: [0.52, 0.52, 1.52] },
-      { id: 'tennis-bats', center: [0.1, 0.78, -4.18], size: [1.92, 1.48, 0.65] },
-      { id: 'trophies-carrom', center: [0.1, 2.75, -4.38], size: [3.65, 0.78, 0.58] },
-      { id: 'trophies-carrom', center: [1.48, 0.95, -4.3], size: [0.86, 1.85, 0.55] },
-      { id: 'trophies-carrom', center: [-1.32, 1.45, -4.35], size: [0.86, 1.15, 0.5] },
-      { id: 'cricket-kit', center: [-1.36, 1.45, -2.52], size: [0.72, 2.65, 3.28] },
+      { id: 'shoes-jerseys', center: [-1.5, 1.25, -1.65], size: [0.58, 2.55, 1.52] },
+      { id: 'trophies-carrom', center: [-1.5, 1.48, -3.19], size: [0.58, 3.05, 1.52] },
     ];
 
     for (const hb of hitboxes) {
@@ -695,8 +757,8 @@ export class ShowroomStage {
     this.mascotTargetRotY = 0.62;
     this.mascotDesiredAnim = 'greet';
 
-    const endPos = new THREE.Vector3(0.54, 1.48, 0.25);
-    const endLook = new THREE.Vector3(-0.38, 1.22, -1.95);
+    const endPos = new THREE.Vector3(0.24, 1.48, 0.12);
+    const endLook = new THREE.Vector3(0.08, 1.42, -3.95);
 
     // Compute matching final yaw/pitch so handoff to 360° swipe has zero jump!
     const fdx = endLook.x - endPos.x;
@@ -751,13 +813,17 @@ export class ShowroomStage {
 
     const spots = {
       __counter: { stand: [0.35, 1.48, -0.55], lookAt: [-0.95, 1.05, -0.22], anim: 'clap' },
-      'willow-bats': { stand: [0.05, 1.46, -0.35], lookAt: [1.62, 0.68, -0.32], anim: 'point' },
-      badminton: { stand: [-0.05, 1.48, -0.35], lookAt: [1.58, 1.68, -0.32], anim: 'point' },
-      footballs: { stand: [0.02, 1.48, -1.75], lookAt: [1.64, 1.32, -2.14], anim: 'point' },
-      'shoes-jerseys': { stand: [0.02, 1.48, -2.45], lookAt: [1.58, 1.62, -3.35], anim: 'point' },
-      'tennis-bats': { stand: [0.1, 1.46, -2.05], lookAt: [0.1, 0.96, -4.18], anim: 'point' },
-      'trophies-carrom': { stand: [0.15, 1.5, -2.15], lookAt: [0.45, 2.05, -4.35], anim: 'clap' },
-      'cricket-kit': { stand: [0.22, 1.48, -2.05], lookAt: [-1.42, 1.55, -2.45], anim: 'point' },
+      // Wall 1 — 100% Dedicated Cricket Wall (Straight-Ahead)
+      'willow-bats': { stand: [0.1, 1.48, -0.95], lookAt: [0.1, 1.44, -4.38], anim: 'point' },
+      'tennis-bats': { stand: [0.1, 1.32, -1.65], lookAt: [0.1, 0.72, -4.06], anim: 'point' },
+      'cricket-kit': { stand: [0.15, 1.48, -1.25], lookAt: [-0.95, 1.45, -4.4], anim: 'point' },
+      // Wall 2 — Right Wall (Court & Field Sports: Badminton, Football/Volley, Basketball/Training)
+      badminton: { stand: [-0.42, 1.52, -0.16], lookAt: [1.66, 1.56, -0.16], anim: 'point' },
+      footballs: { stand: [-0.42, 1.52, -1.68], lookAt: [1.65, 1.52, -1.68], anim: 'point' },
+      'basketball-training': { stand: [-0.42, 1.52, -3.2], lookAt: [1.65, 1.48, -3.2], anim: 'point' },
+      // Wall 3 — Left Wall (Apparel/Shoes & Trophies/Carrom)
+      'shoes-jerseys': { stand: [0.55, 1.52, -1.65], lookAt: [-1.5, 1.52, -1.65], anim: 'point' },
+      'trophies-carrom': { stand: [0.55, 1.52, -3.19], lookAt: [-1.5, 1.58, -3.19], anim: 'clap' },
     };
 
     const spot = spots[sectionId];
@@ -967,12 +1033,14 @@ export class ShowroomStage {
       this.streetTraffic.update(dt);
     }
 
-    // Subtle backlit highlight on hovered or active 3D Wall Sign
-    for (const [id, entry] of this.wallSigns.entries()) {
+    // Subtle backlit highlight on hovered or active 3D Wall Signs
+    for (const [id, entries] of this.wallSigns.entries()) {
       const isLit = id === this.hoveredSectionId || id === this.activeSectionId;
       const targetEmissive = isLit ? 0.34 : 0.07 + 0.03 * Math.sin(this.elapsed * 2.4);
-      entry.faceMat.emissiveIntensity +=
-        (targetEmissive - entry.faceMat.emissiveIntensity) * Math.min(1, dt * 10);
+      for (const entry of entries) {
+        entry.faceMat.emissiveIntensity +=
+          (targetEmissive - entry.faceMat.emissiveIntensity) * Math.min(1, dt * 10);
+      }
     }
 
     const indoorFactor = THREE.MathUtils.clamp((2.2 - this.camera.position.z) / 2.2, 0, 1);

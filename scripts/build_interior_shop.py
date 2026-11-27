@@ -150,6 +150,10 @@ M_BOX_SSS = make_mat("BoxSss", img_path=os.path.join(INT_TEX_DIR, "box_sss.png")
 M_BOX_CARROM = make_mat("BoxCarrom", img_path=os.path.join(INT_TEX_DIR, "box_carrom.png"), rough=0.50)
 M_VOLLEYBALL = make_mat("VolleyballSkin", img_path=os.path.join(INT_TEX_DIR, "volleyball_tex.png"), rough=0.38)
 M_FOOTBALL_MATCH = make_mat("MatchFootballSkin", img_path=os.path.join(INT_TEX_DIR, "football_match_tex.png"), rough=0.32)
+M_BASKETBALL_ORANGE = make_mat("BasketballLeather", color=(0.86, 0.29, 0.04), rough=0.62)
+M_CONE_ORANGE = make_mat("AgilityConeOrange", color=(1.0, 0.36, 0.02), rough=0.36)
+M_CONE_LIME = make_mat("AgilityConeLime", color=(0.56, 0.96, 0.08), rough=0.36)
+M_STUMP_WOOD = make_mat("CricketStumpWood", color=(0.85, 0.68, 0.41), rough=0.32)
 M_HEMP_TWINE = make_mat("HempTwine", color=(0.62, 0.46, 0.26), rough=0.88)
 M_PAD_IVORY = make_mat("PadIvoryPU", color=(0.95, 0.94, 0.91), rough=0.45)
 M_STRINGS = make_mat("RacketStrings", img_path=os.path.join(INT_TEX_DIR, "racket_strings.png"), rough=0.35, alpha_tex=True)
@@ -664,6 +668,133 @@ def make_match_football():
 
 TMPL_MATCH_FB = make_match_football()
 
+# 3D Ribbed Size-7 Match Basketball Template (pebbled orange leather + flush black channels, origin at bottom)
+def make_basketball():
+    parts = []
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=28, ring_count=18, radius=0.118, location=(0, 0, 0.118))
+    ball = bpy.context.active_object
+    bpy.ops.object.shade_smooth()
+    ball.data.materials.append(M_BASKETBALL_ORANGE)
+    parts.append(ball)
+
+    # Flush black rubber rib channels (strictly hugged to the 0.118m sphere surface!)
+    seams = [
+        ((0, 0, 0.118), (0, 0, 0), 0.1172),
+        ((0, 0, 0.118), (math.pi / 2, 0, 0), 0.1172),
+        ((0, 0, 0.118), (math.pi / 2, 0, math.pi / 2), 0.1172),
+        ((0.062, 0, 0.118), (0, math.radians(66), 0), 0.0985),
+        ((-0.062, 0, 0.118), (0, math.radians(-66), 0), 0.0985),
+    ]
+    for loc, rot, mr in seams:
+        bpy.ops.mesh.primitive_torus_add(
+            major_radius=mr,
+            minor_radius=0.0022,
+            major_segments=28,
+            minor_segments=6,
+            location=loc,
+            rotation=rot,
+        )
+        sm = bpy.context.active_object
+        sm.data.materials.append(M_BLACK_GLOSS)
+        parts.append(sm)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    bb = bpy.context.view_layer.objects.active
+    # Put origin cleanly at the BOTTOM contact point (0, 0, 0) so it rests flush on every shelf!
+    scene.cursor.location = (0, 0, 0)
+    bpy.ops.object.origin_set(type="ORIGIN_CURSOR")
+    bb.name = "Tmpl_ProBasketball"
+    return link_tmpl(bb)
+
+TMPL_BASKETBALL = make_basketball()
+
+# 3D Varnished Wooden Cricket Stumps & Bails Set (3 stumps + 2 grooved bails + navy display base)
+def make_cricket_stumps():
+    parts = []
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, 0.016))
+    base = bpy.context.active_object
+    base.scale = (0.26, 0.072, 0.032)
+    bpy.ops.object.transform_apply(scale=True)
+    bv = base.modifiers.new("StBv", "BEVEL")
+    bv.width = 0.004
+    bv.segments = 2
+    bpy.ops.object.modifier_apply(modifier=bv.name)
+    base.data.materials.append(M_NAVY_PANEL)
+    parts.append(base)
+
+    for sx in (-0.084, 0.0, 0.084):
+        bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.014, depth=0.71, location=(sx, 0, 0.385))
+        st = bpy.context.active_object
+        bpy.ops.object.shade_smooth()
+        st.data.materials.append(M_STUMP_WOOD)
+        parts.append(st)
+
+        # Gold decorative band near top of stump
+        bpy.ops.mesh.primitive_cylinder_add(vertices=16, radius=0.0146, depth=0.022, location=(sx, 0, 0.64))
+        bd = bpy.context.active_object
+        bd.data.materials.append(M_ROYAL_BLUE)
+        parts.append(bd)
+
+    # 2 Wooden bails resting cleanly across the stump crowns
+    for bx in (-0.042, 0.042):
+        bpy.ops.mesh.primitive_cylinder_add(
+            vertices=12,
+            radius=0.009,
+            depth=0.082,
+            location=(bx, 0, 0.748),
+            rotation=(0, math.pi / 2, 0),
+        )
+        bl = bpy.context.active_object
+        bl.data.materials.append(M_WOOD_TEAK)
+        parts.append(bl)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    st_set = bpy.context.view_layer.objects.active
+    st_set.name = "Tmpl_CricketStumps"
+    return link_tmpl(st_set)
+
+TMPL_CRICKET_STUMPS = make_cricket_stumps()
+
+# 3D Sports Agility Training Cone (high-visibility neon cone + white reflective band)
+def make_agility_cone(cone_mat):
+    parts = []
+    bpy.ops.mesh.primitive_cube_add(size=1.0, location=(0, 0, 0.008))
+    bs = bpy.context.active_object
+    bs.scale = (0.16, 0.16, 0.016)
+    bpy.ops.object.transform_apply(scale=True)
+    bs.data.materials.append(cone_mat)
+    parts.append(bs)
+
+    bpy.ops.mesh.primitive_cone_add(vertices=18, radius1=0.064, radius2=0.016, depth=0.23, location=(0, 0, 0.13))
+    cn = bpy.context.active_object
+    bpy.ops.object.shade_smooth()
+    cn.data.materials.append(cone_mat)
+    parts.append(cn)
+
+    bpy.ops.mesh.primitive_cone_add(vertices=18, radius1=0.043, radius2=0.032, depth=0.048, location=(0, 0, 0.155))
+    rf = bpy.context.active_object
+    rf.data.materials.append(M_FEATHER_WHITE)
+    parts.append(rf)
+
+    bpy.ops.object.select_all(action="DESELECT")
+    for p in parts:
+        p.select_set(True)
+    bpy.context.view_layer.objects.active = parts[0]
+    bpy.ops.object.join()
+    co = bpy.context.view_layer.objects.active
+    co.name = f"Tmpl_AgilityCone_{cone_mat.name}"
+    return link_tmpl(co)
+
+TMPL_CONES = [make_agility_cone(M_CONE_ORANGE), make_agility_cone(M_CONE_LIME)]
+
 def make_pro_helmet(shell_mat):
     parts = []
     bpy.ops.mesh.primitive_uv_sphere_add(segments=22, ring_count=14, radius=0.125, location=(0, 0, 0.14))
@@ -929,7 +1060,7 @@ if TMPL_CCTV:
     instance_tmpl(TMPL_CCTV, "CornerSecurityCam", 1.72, 3.16, -4.45, ry=-135)
 
 if TMPL_CLOCK:
-    instance_tmpl(TMPL_CLOCK, "ShowroomWallClock", -1.28, 2.08, -4.64, rx=0, ry=0)
+    instance_tmpl(TMPL_CLOCK, "ShowroomWallClock", -1.42, 2.90, -4.64, rx=0, ry=0)
 
 # ==============================================================================
 # 6. FRONT-LEFT DOOR CORNER: ANGLED GLASS-TOP SHOWCASE COUNTER & MONOBLOC CHAIR
@@ -1019,18 +1150,22 @@ for mi in range(8):
     add_cyl(f"MedalDisc_{mi}", mx, 1.81, 0.92, 0.034, 0.007, [M_GOLD, M_SILVER, M_BRONZE][mi % 3], axis="Z", segs=22)
 
 # ==============================================================================
-# 7. STRAIGHT-IN BACK WALL: RECESSED ROYAL-BLUE CABINETS, 22 CROWN TROPHIES, BANNER & BATS
+# 7. WALL 1 (STRAIGHT-AHEAD MAIN WALL): 100% DEDICATED CRICKET ZONE
+#    All bats (Kashmir/English willow & M4 Scoop), wooden stumps, leather/tennis balls,
+#    batting pads, batting gloves, steel-grille helmets & cricket wholesale sacks/cartons.
 # ==============================================================================
 add_box("BackCabinetBacking", 0.08, 1.20, -4.66, 3.68, 2.40, 0.03, M_SHELF_BACK)
 add_box("BackCrownShelf", 0.08, 2.40, -4.44, 3.68, 0.042, 0.46, M_SHELF_WHITE, bevel=0.005)
 add_box("BackCrownBlueFascia", 0.08, 2.40, -4.21, 3.68, 0.050, 0.026, M_ROYAL_BLUE, bevel=0.004)
 add_box("BackCrownAccentLED", 0.08, 2.365, -4.32, 3.50, 0.012, 0.025, M_LED_WARM)
 
-# 20 Ornate Brass & Gold Championship Trophies packed across the entire Back Crown!
-for ti in range(20):
-    tx = -1.62 + ti * 0.178
-    sc = 0.90 + (ti % 3) * 0.11
-    instance_tmpl(TMPL_TROPHIES[ti % 4], f"BackCrownTrophy_{ti}", tx, 2.42, -4.43, ry=(ti % 5 - 2) * 5, scale=(sc, sc, sc))
+# Cricket Crown (y = 2.42): Symmetrical Cricket Helmets, FLASH & R-LON Kit Boxes (100% Cricket!)
+for ci, cx in enumerate([-1.46, -1.08, -0.58, -0.14, 0.34, 0.78, 1.24, 1.62]):
+    if ci % 2 == 0:
+        instance_tmpl(TMPL_HELMETS[(ci // 2) % 2], f"BackCrownHelmet_{ci}", cx, 2.42, -4.42, ry=(ci - 3) * 4)
+    else:
+        bx_tmpl = TMPL_BOX_FLASH if ci in (1, 5) else TMPL_BOX_RLON
+        instance_tmpl(bx_tmpl, f"BackCrownCricketBox_{ci}", cx, 2.42, -4.43, ry=0)
 
 for vx in [-1.72, -0.86, 1.06, 1.88]:
     add_box(f"BackVertDiv_{vx}", vx, 1.20, -4.44, 0.036, 2.40, 0.44, M_SHELF_WHITE)
@@ -1040,7 +1175,7 @@ for vx in [-1.72, -0.86, 1.06, 1.88]:
 add_box("BackBannerFrame", 0.10, 1.91, -4.58, 1.88, 0.88, 0.04, M_ROYAL_BLUE, bevel=0.006)
 add_face_plane("BackBannerFace", 0.10, 1.91, -4.555, 1.82, 0.82, M_BANNER)
 
-# Two-tier Upright Cricket Bat Wall below the Banner
+# --- 7A. BACK-CENTER BAY (x = -0.86..+1.06): WILLOW BATS, M4 SCOOP BATS, WOODEN STUMPS & BALL CRATE ---
 add_box("BackBatUpperShelf", 0.10, 0.68, -4.44, 1.88, 0.036, 0.42, M_SHELF_WHITE)
 add_box("BackBatUpperTrim", 0.10, 0.68, -4.23, 1.88, 0.044, 0.022, M_ROYAL_BLUE)
 add_box("BackBatKeeperBar", 0.10, 1.24, -4.32, 1.86, 0.024, 0.03, M_ROYAL_BLUE)
@@ -1051,138 +1186,101 @@ for bi in range(9):
 
 add_box("BackFloorBatStand", 0.10, 0.035, -4.06, 1.92, 0.07, 0.30, M_NAVY_PANEL, bevel=0.006)
 add_box("BackFloorBatGoldRail", 0.10, 0.56, -3.98, 1.92, 0.024, 0.028, M_GOLD)
-for sbi in range(11):
-    sbx = -0.78 + sbi * 0.175
-    # Turn 4 bats to show off the signature M4 Beast dual-oval back scoops!
-    scoop_yaw = 165.0 if sbi in (2, 5, 8) else 0.0
+for sbi in range(9):
+    sbx = -0.56 + sbi * 0.165
+    # Turn 3 bats to showcase the M4 Beast dual-oval scoop back
+    scoop_yaw = 165.0 if sbi in (1, 4, 7) else 0.0
     scoop_pitch = 7.0 if scoop_yaw > 90 else -7.0
     instance_tmpl(TMPL_M4_SCOOPS[sbi % 5], f"BackM4ScoopBat_{sbi}", sbx, 0.07, -4.06, rx=scoop_pitch, ry=scoop_yaw)
 
-# Back-Left Cubbies (Plaques, Trophies & Photoscanned Cardboard Cartons)
-for sy in [0.92, 1.66]:
-    add_box(f"BackLeftShelf_{sy}", -1.29, sy, -4.44, 0.82, 0.035, 0.42, M_SHELF_WHITE)
-    add_box(f"BackLeftTrim_{sy}", -1.29, sy, -4.23, 0.82, 0.042, 0.022, M_ROYAL_BLUE)
+# Two complete sets of 3D Wooden Cricket Stumps & Bails flanking the hero bat stand!
+instance_tmpl(TMPL_CRICKET_STUMPS, "BackCricketStumpsL", -0.82, 0.07, -3.96, ry=10)
+instance_tmpl(TMPL_CRICKET_STUMPS, "BackCricketStumpsR", 1.00, 0.07, -3.96, ry=-10)
 
-for pi in range(3):
-    instance_tmpl(TMPL_PLAQUE, f"BackArchPlaque_{pi}", -1.56 + pi * 0.26, 1.68, -4.44, rx=-8, ry=5 - pi * 5)
-for mti in range(4):
-    instance_tmpl(TMPL_TROPHIES[(mti + 1) % 4], f"BackLeftCup_{mti}", -1.60 + mti * 0.20, 0.94, -4.42, scale=(0.64, 0.64, 0.64))
-if TMPL_CARDBOARD:
-    instance_tmpl(TMPL_CARDBOARD, "BackLeftCartonA", -1.48, 0.01, -4.40, ry=8)
-    instance_tmpl(TMPL_CARDBOARD, "BackLeftCartonB", -1.12, 0.01, -4.42, ry=-6, scale=(0.88, 0.95, 0.88))
-
-# Back-Right Cubbies (Carrommen Boxes & 2 Full-Size Rosewood Match Carrom Boards)
-for sy in [0.92, 1.66]:
-    add_box(f"BackRightShelf_{sy}", 1.47, sy, -4.44, 0.78, 0.035, 0.42, M_SHELF_WHITE)
-    add_box(f"BackRightTrim_{sy}", 1.47, sy, -4.23, 0.78, 0.042, 0.022, M_ROYAL_BLUE)
-
-for cbi in range(3):
-    instance_tmpl(TMPL_BOX_CARROM, f"CarromBoxHi_{cbi}", 1.20 + cbi * 0.26, 1.68, -4.40, ry=-4)
-    instance_tmpl(TMPL_BOX_CARROM, f"CarromBoxMid_{cbi}", 1.20 + cbi * 0.26, 0.94, -4.40, ry=4)
-
-for cb_i in range(2):
-    cz = -4.32 + cb_i * 0.11
-    add_box(f"CarromRosewoodFrame_{cb_i}", 1.48, 0.44, cz, 0.76, 0.76, 0.048, M_WOOD_MAHOGANY, rx=-8, ry=-6, bevel=0.012)
-    add_face_plane(f"CarromPlayfield_{cb_i}", 1.475, 0.44, cz + 0.027, 0.65, 0.65, M_CARROM_FACE, yaw_deg=-6, pitch_deg=-8)
-
-# ==============================================================================
-# 8. LEFT WALL SHELVES (z = -0.88 .. -4.18): PADS, HELMETS, SHOES, R-LON, CRATES & WOVEN SACKS
-# ==============================================================================
-add_box("LeftCabinetBack", -1.74, 1.20, -2.53, 0.025, 2.40, 3.30, M_SHELF_BACK)
-for sy in [0.82, 1.56, 2.40]:
-    add_box(f"LeftShelf_{sy}", -1.51, sy, -2.53, 0.44, 0.036, 3.30, M_SHELF_WHITE)
-    add_box(f"LeftTrim_{sy}", -1.29, sy, -2.53, 0.024, 0.046, 3.30, M_ROYAL_BLUE)
-
-for vz in [-0.88, -1.98, -3.08, -4.18]:
-    add_box(f"LeftDiv_{vz}", -1.51, 1.20, vz, 0.44, 2.40, 0.032, M_SHELF_WHITE)
-    add_box(f"LeftDivTrim_{vz}", -1.29, 1.20, vz, 0.024, 2.40, 0.040, M_ROYAL_BLUE)
-
-# Top Ledge: FLASH & SSS Helmet/Footwear Boxes
-for bi in range(9):
-    bz = -1.06 - bi * 0.35
-    instance_tmpl(TMPL_BOX_FLASH if bi % 2 == 0 else TMPL_BOX_SSS, f"LeftTopBox_{bi}", -1.49, 2.42, bz, ry=90)
-    if bi % 2 == 0:
-        instance_tmpl(TMPL_BOX_FLASH, f"LeftTopBoxStack_{bi}", -1.51, 2.65, bz, ry=87)
-
-# Upper Cubby (y = 1.58): Contoured 3-Bolster Batting Pads + 4 Pairs of 3D Batting Gloves + Pro Steel-Grill Helmets!
-for pi in range(4):
-    instance_tmpl(TMPL_PRO_PADS[pi % 2], f"LeftProPad_{pi}", -1.46, 1.58, -1.06 - pi * 0.26, ry=90 + (pi % 2) * 8)
-
-for gi in range(4):
-    gz = -2.14 - gi * 0.19
-    instance_tmpl(TMPL_GLOVES[gi % 2], f"LeftBattingGlove_{gi}", -1.42, 1.58, gz, rx=-12, ry=85)
-
-for hi in range(4):
-    instance_tmpl(TMPL_HELMETS[hi % 2], f"LeftProHelmet_{hi}", -1.44, 1.58, -2.98 - hi * 0.29, ry=90)
-
-# Mid Cubby (y = 0.84): Sculpted Turf Sneakers + Lime R-LON Wholesale Packs
-if TMPL_SHOE:
-    for si in range(6):
-        instance_tmpl(TMPL_SHOE, f"LeftShoe_{si}", -1.45, 0.84, -1.06 - si * 0.28, ry=72 + (si % 2) * 22)
-
-for rli in range(4):
-    rlz = -2.84 - rli * 0.31
-    instance_tmpl(TMPL_BOX_RLON, f"LeftRlonA_{rli}", -1.48, 0.84, rlz, ry=90)
-    instance_tmpl(TMPL_BOX_RLON, f"LeftRlonB_{rli}", -1.50, 1.01, rlz, ry=88)
-
-# Floor Wholesale Zone: Corrugated Cartons, Ball Crate & Crisp Printed White Woven Wholesale Sacks in Open View!
-if TMPL_CARDBOARD:
-    for wci in range(4):
-        wcz = -2.55 - wci * 0.40
-        instance_tmpl(TMPL_CARDBOARD, f"WholesaleCartonLo_{wci}", -1.46, 0.01, wcz, ry=88 + (wci % 3 - 1) * 5)
-        if wci < 3:
-            instance_tmpl(TMPL_CARDBOARD, f"WholesaleCartonHi_{wci}", -1.48, 0.34, wcz, ry=92, scale=(0.86, 0.86, 0.86))
-
+# Open Cricket Ball Crate (Yellow Turf Tennis Balls + Crimson Leather Balls) right by the Cricket Wall!
 if TMPL_CRATE:
-    instance_tmpl(TMPL_CRATE, "TennisBallCrate", -0.96, 0.01, -2.18, ry=78)
+    instance_tmpl(TMPL_CRATE, "TennisBallCrate", -0.96, 0.01, -3.56, ry=14)
     for tbi in range(14):
-        bx_off = -1.04 + (tbi % 4) * 0.055
-        bz_off = -2.28 + (tbi // 4) * 0.065
+        bx_off = -1.06 + (tbi % 4) * 0.058
+        bz_off = -3.65 + (tbi // 4) * 0.062
         bpy.ops.mesh.primitive_uv_sphere_add(segments=12, ring_count=8, radius=0.034, location=t2b_loc(bx_off, 0.14 + (tbi % 2) * 0.04, bz_off))
         tb = bpy.context.active_object
         tb.name = f"CrateTennisBall_{tbi}"
         tb.data.materials.append(M_TENNIS_YELLOW if tbi % 3 != 0 else M_CRICKET_LEATHER)
         link_int(tb)
 
-# 3 Soft, Bulging, Tied-Neck Woven Gunny Wholesale Sacks (organic pillow silhouette + crumpled cloth top!)
-for ski in range(3):
-    skz = -2.68 - ski * 0.42
+# --- 7B. BACK-LEFT BAY (x = -1.72..-0.86): CRICKET PROTECTION (HELMETS, 7-CANE BATTING PADS & KIT CARTONS) ---
+for sy in [0.92, 1.66]:
+    add_box(f"BackLeftShelf_{sy}", -1.29, sy, -4.44, 0.82, 0.035, 0.42, M_SHELF_WHITE)
+    add_box(f"BackLeftTrim_{sy}", -1.29, sy, -4.23, 0.82, 0.042, 0.022, M_ROYAL_BLUE)
+
+# Upper shelf: 3 Steel-Grille Pro Cricket Helmets facing straight out into the showroom!
+for hi in range(3):
+    instance_tmpl(TMPL_HELMETS[hi % 2], f"BackCricketHelmet_{hi}", -1.56 + hi * 0.27, 1.68, -4.41, ry=(1 - hi) * 8)
+
+# Mid shelf: 3 Full-Width 7-Cane Batting Pads + 1 pair of Batting Gloves!
+for pi in range(3):
+    instance_tmpl(TMPL_PRO_PADS[pi % 2], f"BackCricketPadL_{pi}", -1.56 + pi * 0.26, 0.94, -4.42, ry=(1 - pi) * 6)
+
+# Floor cubby: FLASH Cricket Helmet Boxes + Corrugated Wholesale Cartons + Velvet Leather Ball Tray
+instance_tmpl(TMPL_BOX_FLASH, "BackCricketFlashBoxA", -1.48, 0.01, -4.42, ry=4)
+instance_tmpl(TMPL_BOX_FLASH, "BackCricketFlashBoxB", -1.48, 0.24, -4.43, ry=-3)
+if TMPL_CARDBOARD:
+    instance_tmpl(TMPL_CARDBOARD, "BackCricketCarton", -1.10, 0.01, -4.42, ry=-6, scale=(0.86, 0.92, 0.86))
+
+# --- 7C. BACK-RIGHT BAY (x = +1.06..+1.88): BATTING GLOVES, LEATHER BALLS, GRIPS, PADS & CRICKET WHOLESALE SACKS ---
+for sy in [0.92, 1.66]:
+    add_box(f"BackRightShelf_{sy}", 1.47, sy, -4.44, 0.78, 0.035, 0.42, M_SHELF_WHITE)
+    add_box(f"BackRightTrim_{sy}", 1.47, sy, -4.23, 0.78, 0.042, 0.022, M_ROYAL_BLUE)
+
+# Upper shelf: 4 Sculpted Cricket Batting Gloves + Crimson Leather Balls row!
+for gi in range(4):
+    instance_tmpl(TMPL_GLOVES[gi % 2], f"BackCricketGlove_{gi}", 1.19 + gi * 0.185, 1.68, -4.42, rx=-10, ry=-6)
+if TMPL_CRICKET_BALL:
+    for cbi in range(5):
+        instance_tmpl(TMPL_CRICKET_BALL, f"BackCricketBallDisp_{cbi}", 1.22 + cbi * 0.125, 1.69, -4.28, ry=cbi * 40)
+
+# Mid shelf: 2 Pro Batting Pads + 2 Stacked Lime R-LON Cricket Wholesale Boxes
+for rpi in range(2):
+    instance_tmpl(TMPL_PRO_PADS[(rpi + 1) % 2], f"BackCricketPadR_{rpi}", 1.24 + rpi * 0.24, 0.94, -4.42, ry=-8)
+instance_tmpl(TMPL_BOX_RLON, "BackCricketRlonA", 1.68, 0.94, -4.42, ry=-4)
+instance_tmpl(TMPL_BOX_RLON, "BackCricketRlonB", 1.68, 1.11, -4.43, ry=3)
+
+# Floor: 2 Soft, Bulging, Tied-Neck Woven Sultan Cricket Wholesale Sacks!
+for ski in range(2):
+    skx = 1.24 + ski * 0.34
     parts_s = []
-    # Plump organic bulging sack body (deformed smooth sphere, NOT a boxy jerrycan!)
-    bpy.ops.mesh.primitive_uv_sphere_add(segments=20, ring_count=14, radius=0.22, location=(0, 0, 0.21))
+    bpy.ops.mesh.primitive_uv_sphere_add(segments=20, ring_count=14, radius=0.19, location=(0, 0, 0.18))
     sb = bpy.context.active_object
     bpy.ops.object.shade_smooth()
     sb.scale = (0.86, 0.68, 1.08)
     bpy.ops.object.transform_apply(scale=True)
-    # Flatten bottom slightly so sack sits heavily on the turf
     for v in sb.data.vertices:
         if v.co.z < 0.05:
             v.co.z = max(0.0, v.co.z * 0.35)
             v.co.x *= 1.08
             v.co.y *= 1.08
-        elif v.co.z > 0.34:
-            pinch = max(0.32, 1.0 - (v.co.z - 0.34) * 4.2)
+        elif v.co.z > 0.30:
+            pinch = max(0.32, 1.0 - (v.co.z - 0.30) * 4.4)
             v.co.x *= pinch
             v.co.y *= pinch
     sb.data.update()
     sb.data.materials.append(M_SACK_WOVEN)
     parts_s.append(sb)
 
-    # Curved printed woven front label patch
-    bpy.ops.mesh.primitive_plane_add(size=1.0, location=(0, -0.152, 0.21), rotation=(math.pi / 2, 0, 0))
+    bpy.ops.mesh.primitive_plane_add(size=1.0, location=(0, -0.132, 0.18), rotation=(math.pi / 2, 0, 0))
     slb = bpy.context.active_object
-    slb.scale = (0.24, 0.26, 1.0)
+    slb.scale = (0.21, 0.23, 1.0)
     bpy.ops.object.transform_apply(scale=True)
     slb.data.materials.append(M_SACK_WOVEN)
     parts_s.append(slb)
 
-    # Cinched hemp twine cord + flared crumpled cloth ruffle fan at top (zero plastic cap!)
-    bpy.ops.mesh.primitive_cylinder_add(vertices=14, radius=0.048, depth=0.022, location=(0, 0, 0.425))
+    bpy.ops.mesh.primitive_cylinder_add(vertices=14, radius=0.042, depth=0.020, location=(0, 0, 0.375))
     tw = bpy.context.active_object
     tw.data.materials.append(M_HEMP_TWINE)
     parts_s.append(tw)
 
-    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.042, radius2=0.105, depth=0.085, location=(0, 0, 0.475))
+    bpy.ops.mesh.primitive_cone_add(vertices=12, radius1=0.036, radius2=0.090, depth=0.074, location=(0, 0, 0.42))
     rf = bpy.context.active_object
     rf.scale = (1.15, 0.72, 1.0)
     bpy.ops.object.transform_apply(scale=True)
@@ -1196,60 +1294,168 @@ for ski in range(3):
     bpy.ops.object.join()
     sack_obj = bpy.context.view_layer.objects.active
     sack_obj.name = f"PrintedWholesaleSack_{ski}"
-    sack_obj.location = t2b_loc(-1.02, 0.0, skz)
-    sack_obj.rotation_euler = t2b_rot((ski - 1) * 3, 82 + (ski - 1) * 11, 0)
+    sack_obj.location = t2b_loc(skx, 0.0, -4.24 + ski * 0.06)
+    sack_obj.rotation_euler = t2b_rot(2, -10 + ski * 12, 0)
     link_int(sack_obj)
 
 # ==============================================================================
-# 9. RIGHT WALL: CROWN TROPHIES, SLANTED BAT RACK, STRUNG RACKETS, PHOTOSCANNED FOOTBALLS & SUBLIMATED JERSEYS
+# 8. WALL 3 (LEFT WALL, z = -0.88 .. -3.96): APPAREL/SHOES (BAY L2) & TROPHIES/CARROM (BAY L3)
+#    Cleanly positioned behind the Front-Left Glass Billing Counter with crisp Back-Wall sightlines!
 # ==============================================================================
-add_box("RightCrownShelf", 1.68, 2.40, -1.72, 0.44, 0.038, 4.92, M_SHELF_WHITE, bevel=0.004)
-add_box("RightCrownTrim", 1.46, 2.40, -1.72, 0.024, 0.046, 4.92, M_ROYAL_BLUE)
-for rti in range(12):
-    instance_tmpl(TMPL_TROPHIES[(rti + 2) % 4], f"RightCrownTrophy_{rti}", 1.68, 2.42, 0.58 - rti * 0.42, ry=-90, scale=(0.86, 0.86, 0.86))
+add_box("LeftCabinetBack", -1.74, 1.20, -2.42, 0.025, 2.40, 3.08, M_SHELF_BACK)
+add_box("LeftCrownShelf", -1.51, 2.40, -2.42, 0.44, 0.038, 3.08, M_SHELF_WHITE, bevel=0.004)
+add_box("LeftCrownTrim", -1.29, 2.40, -2.42, 0.024, 0.048, 3.08, M_ROYAL_BLUE)
+add_box("LeftCrownLED", -1.42, 2.365, -2.42, 0.024, 0.012, 2.94, M_LED_WARM)
 
-# A) Front-Right Slanted Floor Bat Rack
-add_box("RightBatRackPlinth", 1.66, 0.04, -0.32, 0.42, 0.08, 2.06, M_WOOD_TEAK, bevel=0.006)
-add_box("RightBatRackKeeper", 1.55, 0.56, -0.32, 0.032, 0.032, 2.04, M_ROYAL_BLUE)
-for rbi in range(10):
-    rbz = 0.58 - rbi * 0.20
-    bt = TMPL_PRO_BATS[rbi % 6] if rbi < 5 else TMPL_M4_SCOOPS[rbi % 5]
-    instance_tmpl(bt, f"RightSlantedBat_{rbi}", 1.60, 0.08, rbz, ry=-90, rz=10)
+# Vertical dividers splitting Left Wall cleanly into Bay L2 (Jerseys & Shoes) and Bay L3 (Trophies & Carrom)
+for vz in [-0.88, -2.42, -3.96]:
+    add_box(f"LeftDiv_{vz}", -1.51, 1.20, vz, 0.44, 2.40, 0.034, M_SHELF_WHITE)
+    add_box(f"LeftDivTrim_{vz}", -1.29, 1.20, vz, 0.024, 2.40, 0.042, M_ROYAL_BLUE)
 
-# B) Upper-Right Strung Badminton Rackets + Printed Mavis Shuttle Tubes + 10 Real 3D Feathered Shuttlecocks!
-add_box("RightBadmintonShelf", 1.68, 1.16, -0.32, 0.42, 0.035, 1.96, M_SHELF_WHITE)
-add_box("RightBadmintonTrim", 1.47, 1.16, -0.32, 0.022, 0.042, 1.96, M_ROYAL_BLUE)
+# --- 8A. BAY L2 (z = -0.88 .. -2.42): TEAM JERSEYS & SPORTS SHOES ---
+# Chrome hanging garment bar at y = 2.16 (5 jerseys spaced with 18cm clearance from BOTH dividers!)
+add_cyl("LeftJerseyChromeBar", -1.50, 2.16, -1.65, 0.015, 1.42, M_SILVER, axis="Z")
+for ji in range(5):
+    jz = -1.16 - ji * 0.245
+    instance_tmpl(TMPL_JERSEYS[ji % 3], f"LeftProJersey_{ji}", -1.49, 2.14, jz, ry=74)
+
+# Shoe display shelf (y = 0.94) + lower footwear box shelf (y = 0.42)
+for sy in [0.42, 0.94]:
+    add_box(f"LeftL2Shelf_{sy}", -1.51, sy, -1.65, 0.44, 0.035, 1.50, M_SHELF_WHITE)
+    add_box(f"LeftL2Trim_{sy}", -1.29, sy, -1.65, 0.024, 0.042, 1.50, M_ROYAL_BLUE)
+
+if TMPL_SHOE:
+    for si in range(5):
+        instance_tmpl(TMPL_SHOE, f"LeftShoeMid_{si}", -1.46, 0.96, -1.08 - si * 0.285, ry=68 + (si % 2) * 24)
+    for si2 in range(4):
+        instance_tmpl(TMPL_SHOE, f"LeftShoeLow_{si2}", -1.46, 0.44, -1.15 - si2 * 0.33, ry=76 + (si2 % 2) * 18)
+
+# Floor & Crown Footwear/Apparel Stock Boxes in Bay L2
+for bi in range(4):
+    bz = -1.12 - bi * 0.35
+    instance_tmpl(TMPL_BOX_SSS if bi % 2 == 0 else TMPL_BOX_FLASH, f"LeftL2FloorBox_{bi}", -1.48, 0.01, bz, ry=90)
+    instance_tmpl(TMPL_BOX_SSS if bi % 2 == 1 else TMPL_BOX_FLASH, f"LeftL2CrownBox_{bi}", -1.49, 2.42, bz, ry=90)
+
+# --- 8B. BAY L3 (z = -2.42 .. -3.96): 22K GOLD TROPHIES, WOODEN PLAQUES & ROSEWOOD CARROM BOARDS ---
+for sy in [0.96, 1.66]:
+    add_box(f"LeftL3Shelf_{sy}", -1.51, sy, -3.19, 0.44, 0.035, 1.50, M_SHELF_WHITE)
+    add_box(f"LeftL3Trim_{sy}", -1.29, sy, -3.19, 0.024, 0.042, 1.50, M_ROYAL_BLUE)
+
+# Crown above Bay L3 (y = 2.42): 8 Gleaming 22k Gold Championship Trophy Cups!
+for ti in range(8):
+    tz = -2.56 - ti * 0.18
+    sc = 0.88 + (ti % 3) * 0.10
+    instance_tmpl(TMPL_TROPHIES[ti % 4], f"LeftCrownTrophy_{ti}", -1.49, 2.42, tz, ry=90 + (ti % 3 - 1) * 6, scale=(sc, sc, sc))
+
+# Upper shelf (y = 1.68): 4 Gold Tournament Cups + 3 Wooden Arch Plaques facing +X into the aisle!
+for mti in range(4):
+    instance_tmpl(TMPL_TROPHIES[(mti + 1) % 4], f"LeftUpperTrophy_{mti}", -1.47, 1.68, -2.58 - mti * 0.20, ry=90, scale=(0.68, 0.68, 0.68))
+for pi in range(3):
+    instance_tmpl(TMPL_PLAQUE, f"LeftArchPlaque_{pi}", -1.52, 1.68, -3.38 - pi * 0.22, rx=-8, ry=90)
+
+# Mid shelf (y = 0.98): 5 Carrommen & Striker Boxes
+for cbi in range(5):
+    instance_tmpl(TMPL_BOX_CARROM, f"LeftCarromBox_{cbi}", -1.48, 0.98, -2.60 - cbi * 0.29, ry=90 + (cbi % 2 - 0.5) * 6)
+
+# Floor Bay L3 (y = 0.02..0.82): 2 Full-Size Rosewood Match Carrom Boards leaning neatly facing +X!
+for cb_i in range(2):
+    cz = -2.82 - cb_i * 0.74
+    add_box(f"CarromRosewoodFrame_{cb_i}", -1.50, 0.42, cz, 0.048, 0.70, 0.70, M_WOOD_MAHOGANY, ry=0, rz=7, bevel=0.012)
+    add_face_plane(f"CarromPlayfield_{cb_i}", -1.472, 0.42, cz, 0.60, 0.60, M_CARROM_FACE, yaw_deg=90, pitch_deg=-7)
+
+# ==============================================================================
+# 9. WALL 2 (RIGHT WALL, z = +0.60 .. -3.96): COURT & FIELD SPORTS (3 CLEAN BAYS)
+#    Bay R1: Badminton & Rackets | Bay R2: Football & Volleyball | Bay R3: Basketball & Training Gear
+# ==============================================================================
+add_box("RightCabinetBack", 1.90, 1.20, -1.68, 0.025, 2.40, 4.56, M_SHELF_BACK)
+add_box("RightCrownShelf", 1.68, 2.40, -1.68, 0.44, 0.038, 4.56, M_SHELF_WHITE, bevel=0.004)
+add_box("RightCrownTrim", 1.46, 2.40, -1.68, 0.024, 0.048, 4.56, M_ROYAL_BLUE)
+add_box("RightCrownLED", 1.58, 2.365, -1.68, 0.024, 0.012, 4.42, M_LED_WARM)
+
+# Vertical Royal-Blue Dividers framing the 3 Sport Bays cleanly (1.52m each)!
+for vz in [0.60, -0.92, -2.44, -3.96]:
+    add_box(f"RightDiv_{vz}", 1.68, 1.20, vz, 0.44, 2.40, 0.034, M_SHELF_WHITE)
+    add_box(f"RightDivTrim_{vz}", 1.46, 1.20, vz, 0.024, 2.40, 0.042, M_ROYAL_BLUE)
+
+# --- 9A. BAY R1 (z = +0.60 .. -0.92): BADMINTON RACKETS, MAVIS SHUTTLE TUBES & FEATHERED SHUTTLES ---
+for sy in [0.42, 1.08]:
+    add_box(f"RightR1Shelf_{sy}", 1.68, sy, -0.16, 0.42, 0.035, 1.48, M_SHELF_WHITE)
+    add_box(f"RightR1Trim_{sy}", 1.47, sy, -0.16, 0.022, 0.042, 1.48, M_ROYAL_BLUE)
+
+# Upper hanging rack (y = 1.56..2.20): 7 Strung Graphite Badminton Rackets
+add_cyl("RightRacketHangBar", 1.66, 2.18, -0.16, 0.012, 1.38, M_SILVER, axis="Z")
 for rki in range(7):
-    instance_tmpl(TMPL_RACKETS[rki % 4], f"RightStrungRacket_{rki}", 1.66, 1.54, 0.52 - rki * 0.24, ry=-90)
+    instance_tmpl(TMPL_RACKETS[rki % 4], f"RightStrungRacket_{rki}", 1.64, 1.54, 0.44 - rki * 0.20, ry=-90)
 
-for sti in range(7):
-    stz = 0.48 - sti * 0.23
-    add_cyl(f"ShuttleTube_{sti}", 1.72, 1.34, stz, 0.031, 0.31, M_SHUTTLE_TUBE, axis="Y", ry=-90)
-    add_cyl(f"ShuttleCap_{sti}", 1.72, 1.50, stz, 0.0325, 0.018, M_FEATHER_WHITE, axis="Y")
+# Mid shelf (y = 1.10): 6 Printed Shuttle Tubes + 8 Real 3D Feathered Shuttlecocks!
+for sti in range(6):
+    stz = 0.42 - sti * 0.23
+    add_cyl(f"ShuttleTube_{sti}", 1.74, 1.26, stz, 0.031, 0.31, M_SHUTTLE_TUBE, axis="Y", ry=-90)
+    add_cyl(f"ShuttleCap_{sti}", 1.74, 1.42, stz, 0.0325, 0.018, M_FEATHER_WHITE, axis="Y")
 
-for sci in range(10):
-    scz = 0.52 - sci * 0.165
-    instance_tmpl(TMPL_SHUTTLECOCK, f"FeatheredShuttle_{sci}", 1.56, 1.18, scz, rx=(sci % 2) * 8)
+for sci in range(8):
+    scz = 0.44 - sci * 0.175
+    instance_tmpl(TMPL_SHUTTLECOCK, f"FeatheredShuttle_{sci}", 1.56, 1.10, scz, rx=(sci % 2) * 8)
 
-# C) Mid-Right Photoscanned Leather Footballs & 18-Panel Volleyballs + Turf Sneakers
-for bsy in [0.76, 1.52]:
-    add_box(f"BallCradleA_{bsy}", 1.54, bsy, -2.14, 0.028, 0.028, 1.52, M_ROYAL_BLUE)
-    add_box(f"BallCradleB_{bsy}", 1.76, bsy, -2.14, 0.028, 0.028, 1.52, M_ROYAL_BLUE)
+# Lower shelf (y = 0.44) & Floor: Extra Shuttle Tubes + Badminton Net Cartons
+for sti2 in range(5):
+    stz2 = 0.38 - sti2 * 0.27
+    add_cyl(f"ShuttleTubeLo_{sti2}", 1.66, 0.60, stz2, 0.031, 0.31, M_SHUTTLE_TUBE, axis="Y", ry=-90)
+    add_cyl(f"ShuttleCapLo_{sti2}", 1.66, 0.76, stz2, 0.0325, 0.018, M_FEATHER_WHITE, axis="Y")
+for bbi in range(3):
+    instance_tmpl(TMPL_BOX_SSS if bbi % 2 == 0 else TMPL_BOX_RLON, f"RightR1FloorBox_{bbi}", 1.66, 0.01, 0.30 - bbi * 0.45, ry=-90)
+    instance_tmpl(TMPL_BOX_RLON if bbi % 2 == 0 else TMPL_BOX_FLASH, f"RightR1CrownBox_{bbi}", 1.68, 2.42, 0.30 - bbi * 0.45, ry=-90)
+
+# --- 9B. BAY R2 (z = -0.92 .. -2.44): MATCH FOOTBALLS & 18-PANEL VOLLEYBALLS ---
+for bsy in [0.42, 1.04, 1.64]:
+    add_box(f"RightR2CradleFront_{bsy}", 1.54, bsy, -1.68, 0.026, 0.026, 1.48, M_ROYAL_BLUE)
+    add_box(f"RightR2CradleBack_{bsy}", 1.76, bsy, -1.68, 0.026, 0.026, 1.48, M_ROYAL_BLUE)
 
 for bli in range(5):
-    blz = -1.52 - bli * 0.30
-    instance_tmpl(TMPL_MATCH_FB, f"RightLeatherFootball_{bli}", 1.65, 1.53, blz, rx=bli * 28, ry=35 + bli * 54)
-    instance_tmpl(TMPL_VOLLEY if bli % 2 == 0 else TMPL_MATCH_FB, f"RightLowerBall_{bli}", 1.65, 0.77, blz, rx=18 * bli, ry=-42 * bli)
+    blz = -1.10 - bli * 0.29
+    instance_tmpl(TMPL_MATCH_FB, f"RightMatchFootball_{bli}", 1.65, 1.65, blz, rx=bli * 26, ry=35 + bli * 50)
+    instance_tmpl(TMPL_VOLLEY, f"RightMatchVolleyball_{bli}", 1.65, 1.05, blz, rx=18 * bli, ry=-40 * bli)
+    instance_tmpl(TMPL_MATCH_FB if bli % 2 == 0 else TMPL_VOLLEY, f"RightLowerFieldBall_{bli}", 1.65, 0.43, blz, rx=14 * bli, ry=25 * bli)
 
-add_box("RightShoeRiser", 1.66, 0.14, -2.14, 0.40, 0.26, 1.48, M_NAVY_PANEL, bevel=0.006)
-if TMPL_SHOE:
-    for rsi in range(5):
-        instance_tmpl(TMPL_SHOE, f"RightTurfSneaker_{rsi}", 1.62, 0.27, -1.56 - rsi * 0.28, ry=-108)
+# Crown above Bay R2: 4 Display Match Footballs & Volleyballs on navy rings
+for cfi in range(4):
+    cfz = -1.16 - cfi * 0.345
+    add_cyl(f"RightR2CrownRing_{cfi}", 1.66, 2.435, cfz, 0.075, 0.026, M_NAVY_PANEL, axis="Y")
+    instance_tmpl(TMPL_MATCH_FB if cfi % 2 == 0 else TMPL_VOLLEY, f"RightR2CrownBall_{cfi}", 1.66, 2.445, cfz, ry=cfi * 45)
 
-# D) Back-Right Sublimated Team Jerseys (TYKA Lime, Kadapa Royals Blue, Strikers Orange)
-add_cyl("JerseyChromeBar", 1.62, 2.16, -3.55, 0.016, 1.18, M_SILVER, axis="Z")
-for ji in range(5):
-    instance_tmpl(TMPL_JERSEYS[ji % 3], f"RightProJersey_{ji}", 1.62, 2.14, -3.04 - ji * 0.24, ry=-62)
+# --- 9C. BAY R3 (z = -2.44 .. -3.96): BASKETBALL & TRAINING GEAR (ALL BALLS RESTING FLUSH, ZERO CLIPPING!) ---
+# Top flat shelf (y = 1.62, top face 1.638): 4 Ribbed Orange Size-7 Basketballs resting cleanly on top!
+add_box("RightR3ShelfHi", 1.68, 1.62, -3.20, 0.42, 0.035, 1.48, M_SHELF_WHITE)
+add_box("RightR3TrimHi", 1.47, 1.62, -3.20, 0.022, 0.042, 1.48, M_ROYAL_BLUE)
+for bbi in range(4):
+    bbz = -2.68 - bbi * 0.345
+    add_cyl(f"RightR3HiRing_{bbi}", 1.66, 1.648, bbz, 0.072, 0.020, M_NAVY_PANEL, axis="Y")
+    instance_tmpl(TMPL_BASKETBALL, f"RightBasketballHi_{bbi}", 1.66, 1.642, bbz, ry=-80 + bbi * 25)
+
+# Mid shelf (y = 1.02, top face 1.038): 3 Basketballs + 3 Neon Agility Training Cones resting cleanly on top!
+add_box("RightR3ShelfMid", 1.68, 1.02, -3.20, 0.42, 0.035, 1.48, M_SHELF_WHITE)
+add_box("RightR3TrimMid", 1.47, 1.02, -3.20, 0.022, 0.042, 1.48, M_ROYAL_BLUE)
+for bbm in range(3):
+    bbmz = -2.66 - bbm * 0.285
+    add_cyl(f"RightR3MidRing_{bbm}", 1.66, 1.048, bbmz, 0.072, 0.020, M_NAVY_PANEL, axis="Y")
+    instance_tmpl(TMPL_BASKETBALL, f"RightBasketballMid_{bbm}", 1.66, 1.042, bbmz, ry=-70 + bbm * 35)
+for ci in range(3):
+    instance_tmpl(TMPL_CONES[ci % 2], f"RightMidCone_{ci}", 1.65, 1.039, -3.44 - ci * 0.19, ry=-90)
+
+# Lower riser (y = 0.14, height 0.26 -> top face 0.27): Agility Training Cones + 2 Basketballs resting flush on top!
+add_box("RightR3Riser", 1.66, 0.14, -3.20, 0.40, 0.26, 1.44, M_NAVY_PANEL, bevel=0.006)
+for lci in range(4):
+    instance_tmpl(TMPL_CONES[(lci + 1) % 2], f"RightLowCone_{lci}", 1.63, 0.272, -2.66 - lci * 0.21, ry=-90)
+for bbl in range(2):
+    bblz = -3.52 - bbl * 0.27
+    add_cyl(f"RightR3LoRing_{bbl}", 1.66, 0.282, bblz, 0.072, 0.020, M_ROYAL_BLUE, axis="Y")
+    instance_tmpl(TMPL_BASKETBALL, f"RightBasketballLow_{bbl}", 1.66, 0.276, bblz, ry=-90 + bbl * 35)
+
+# Crown above Bay R3 (y = 2.40, top face 2.419): 4 Ribbed Orange Basketballs on navy rings
+for cbi in range(4):
+    cbz = -2.68 - cbi * 0.345
+    add_cyl(f"RightR3CrownRing_{cbi}", 1.66, 2.432, cbz, 0.072, 0.024, M_NAVY_PANEL, axis="Y")
+    instance_tmpl(TMPL_BASKETBALL, f"RightR3CrownBall_{cbi}", 1.66, 2.426, cbz, ry=-90 + cbi * 30)
 
 # ==============================================================================
 # 10. EXPORT GLB & RENDER CPU-ONLY PREVIEWS (0% GPU IMPACT)
